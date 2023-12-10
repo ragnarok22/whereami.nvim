@@ -2,7 +2,14 @@
 A simple plugin for neovim to get the current location
 
 ## Installation
-Using Packer:
+Using Lazy:
+
+    {
+        "ragnarok22/whereami.nvim",
+        cmd = "Whereami"
+    }
+
+Using Packer (deprecated):
 
     use 'ragnarok22/whereami.nvim'
 and then execute `:PackerUpdate`
