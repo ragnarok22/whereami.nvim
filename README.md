@@ -1,5 +1,5 @@
 # Whereami.nvim
-A simple plugin for neovim to get the current location.
+An easy way to test your VPN by getting your current location without leaving Neovim.
 
 ## Installation
 Using Lazy:
