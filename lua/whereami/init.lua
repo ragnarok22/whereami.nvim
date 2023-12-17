@@ -12,7 +12,7 @@ M.whereami = function ()
 end
 
 vim.api.nvim_create_user_command("Whereami", "lua require('whereami').whereami()", {
-    desc = "Where your Internet Provider is",
+    desc = "Location where the current location was originated from.",
     nargs = 0,
 })
 
