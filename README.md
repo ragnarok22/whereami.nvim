@@ -1,5 +1,5 @@
-# whereami.nvim
-A simple plugin for neovim to get the current location
+# Whereami.nvim
+A simple plugin for neovim to get the current location.
 
 ## Installation
 Using Lazy:
@@ -12,7 +12,7 @@ Using Lazy:
 Using Packer (deprecated):
 
     use 'ragnarok22/whereami.nvim'
-and then execute `:PackerUpdate`
+and then execute `:PackerUpdate`.
 
 ## Usage
-Just type the command `:Whereami` and you will see the country you are
+Just type the command `:Whereami` and you will see the country you are.
