@@ -17,12 +17,12 @@ local function get_flag(country_iso)
       flag_icon = flag_icon .. string.char(0xC0 + math.floor(code_point / 0x40), 0x80 + code_point % 0x40)
     elseif code_point <= 0xFFFF then
       flag_icon = flag_icon ..
-      string.char(0xE0 + math.floor(code_point / 0x1000), 0x80 + math.floor((code_point % 0x1000) / 0x40),
-        0x80 + code_point % 0x40)
+          string.char(0xE0 + math.floor(code_point / 0x1000), 0x80 + math.floor((code_point % 0x1000) / 0x40),
+            0x80 + code_point % 0x40)
     elseif code_point <= 0x10FFFF then
       flag_icon = flag_icon ..
-      string.char(0xF0 + math.floor(code_point / 0x40000), 0x80 + math.floor((code_point % 0x40000) / 0x1000),
-        0x80 + math.floor((code_point % 0x1000) / 0x40), 0x80 + code_point % 0x40)
+          string.char(0xF0 + math.floor(code_point / 0x40000), 0x80 + math.floor((code_point % 0x40000) / 0x1000),
+            0x80 + math.floor((code_point % 0x1000) / 0x40), 0x80 + code_point % 0x40)
     end
   end
 
@@ -35,17 +35,34 @@ end
 
 M.country = function()
   local data = get_data()
-  print(get_flag(data.country_iso) .. data.country)
+  local icon = get_flag(data.country_iso)
+  if not icon then
+    icon = "🌎"
+  end
+
+  vim.notify(
+    "You are in " .. icon .. data.country,
+    vim.log.levels.INFO,
+    { title = "Where am I?", icon=icon }
+  )
 end
 
 M.city = function()
   local data = get_data()
-  print(data.city)
+  vim.notify(
+    "You are in " .. data.city,
+    vim.log.levels.INFO,
+    { title = "Where am I?", icon="❔" }
+  )
 end
 
 M.ip = function()
   local data = get_data()
-  print(data.ip)
+  vim.notify(
+    "You IP is " .. data.ip,
+    vim.log.levels.INFO,
+    { title = "Where am I?", icon="❔" }
+  )
 end
 
 M.whereami = function()
@@ -65,17 +82,14 @@ vim.api.nvim_create_user_command("Whereami",
       M.country()
     end
   end,
-{ nargs = "*",
-  complete = function(ArgLead, CmdLine, CursorPos)
-    -- return completion candidates as a list-like table
-    return { "city", "country", "ip" }
-  end,
-  desc = "Location where the current location was originated from.",
-})
-
--- vim.api.nvim_create_user_command("Whereami", "lua require('whereami').whereami()", {
---   desc = "Location where the current location was originated from.",
---   nargs = 0,
--- })
+  {
+    nargs = "*",
+    complete = function(ArgLead, CmdLine, CursorPos)
+      -- return completion candidates as a list-like table
+      return { "city", "country", "ip" }
+    end,
+    desc = "Location where the current location was originated from.",
+  }
+)
 
 return M
