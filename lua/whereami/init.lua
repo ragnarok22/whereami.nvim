@@ -1,19 +1,50 @@
 local M = {}
+local curl = require("plenary.curl")
 
-M.whereami = function ()
-    local handle = io.popen("curl -s ipconfig.io/country")
-    if (handle ~= nil) then
-        local response = handle:read("*a")
-        handle:close()
-        print(response)
-        return response
+local function get_data()
+  local data = vim.json.decode(curl.get("ipconfig.io/json").body)
+  return data
+end
+
+-- TODO: find a better way to do this. So far utf8.char() is the only way I found but is not available in lua 5.1
+local function get_flag(country_iso)
+  local flag_icon = ""
+  for i = 1, #country_iso do
+    local code_point = country_iso:byte(i) + 127397
+    if code_point <= 0x7F then
+      flag_icon = flag_icon .. string.char(code_point)
+    elseif code_point <= 0x7FF then
+      flag_icon = flag_icon .. string.char(0xC0 + math.floor(code_point / 0x40), 0x80 + code_point % 0x40)
+    elseif code_point <= 0xFFFF then
+      flag_icon = flag_icon ..
+      string.char(0xE0 + math.floor(code_point / 0x1000), 0x80 + math.floor((code_point % 0x1000) / 0x40),
+        0x80 + code_point % 0x40)
+    elseif code_point <= 0x10FFFF then
+      flag_icon = flag_icon ..
+      string.char(0xF0 + math.floor(code_point / 0x40000), 0x80 + math.floor((code_point % 0x40000) / 0x1000),
+        0x80 + math.floor((code_point % 0x1000) / 0x40), 0x80 + code_point % 0x40)
     end
-    print("Connection error")
+  end
+
+  -- for i = 1, #country_iso do
+  --     local charCode = string.byte(country_iso:sub(i, i)) + 127397
+  --     flag_icon = flag_icon .. utf8.char(charCode)
+  -- end
+  return flag_icon
+end
+
+M.country = function()
+  local data = get_data()
+  print(get_flag(data.country_iso) .. data.country)
+end
+
+M.whereami = function()
+  M.country()
 end
 
 vim.api.nvim_create_user_command("Whereami", "lua require('whereami').whereami()", {
-    desc = "Location where the current location was originated from.",
-    nargs = 0,
+  desc = "Location where the current location was originated from.",
+  nargs = 0,
 })
 
 return M
