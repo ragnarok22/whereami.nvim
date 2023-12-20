@@ -19,10 +19,32 @@ An easy way to test your VPN by getting your current location without leaving Ne
         }
     }
 
-[packer (deprecated)](https://github.com/wbthomason/packer.nvim):
+[packer](https://github.com/wbthomason/packer.nvim) (deprecated):
 
     use 'ragnarok22/whereami.nvim'
 and then execute `:PackerUpdate`.
+
+### Usage with [nvim-notify](https://github.com/rcarriga/nvim-notify):
+
+You only need to install [nvim-notify](https://github.com/rcarriga/nvim-notify) and set the notify:
+
+```lua
+vim.notify = require("notify")
+```
+
+Here an example of installation using lazy:
+```lua
+{
+  "ragnarok22/whereami.nvim",
+  cmd = "Whereami",
+  dependencies = {
+    "rcarriga/nvim-notify",
+    config = function()
+      vim.notify = require("notify")
+    end
+  }
+}
+```
 
 ## Usage
 You can use the command or the API
@@ -40,13 +62,13 @@ You can also provide and argument:
 You can also use the methods, for example for key bindings
 
 ```lua
-    local whereami = require("whereami")
-    whereami.country() -- show the country
-    whereami.city() -- show the city
-    whereami.ip() -- show the IP
+local whereami = require("whereami")
+whereami.country() -- show the country
+whereami.city() -- show the city
+whereami.ip() -- show the IP
 
-    -- set keymaps
-    vim.keymap.set("n", "<leader>l", whereami.country, { desc = "Show the country" })
-    vim.keymap.set("n", "<leader>e", whereami.city, { desc = "Show the city" })
-    vim.keymap.set("n", "<leader>i", whereami.ip, { desc = "Show the ip" })
+-- set keymaps
+vim.keymap.set("n", "<leader>l", whereami.country, { desc = "Show the country" })
+vim.keymap.set("n", "<leader>e", whereami.city, { desc = "Show the city" })
+vim.keymap.set("n", "<leader>i", whereami.ip, { desc = "Show the ip" })
 ```
