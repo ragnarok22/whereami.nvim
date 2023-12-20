@@ -39,6 +39,7 @@ You can also provide and argument:
 ### API
 You can also use the methods, for example for key bindings
 
+```lua
     local whereami = require("whereami")
     whereami.country() -- show the country
     whereami.city() -- show the city
@@ -48,3 +49,4 @@ You can also use the methods, for example for key bindings
     vim.keymap.set("n", "<leader>l", whereami.country, { desc = "Show the country" })
     vim.keymap.set("n", "<leader>e", whereami.city, { desc = "Show the city" })
     vim.keymap.set("n", "<leader>i", whereami.ip, { desc = "Show the ip" })
+```
