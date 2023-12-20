@@ -38,13 +38,44 @@ M.country = function()
   print(get_flag(data.country_iso) .. data.country)
 end
 
+M.city = function()
+  local data = get_data()
+  print(data.city)
+end
+
+M.ip = function()
+  local data = get_data()
+  print(data.ip)
+end
+
 M.whereami = function()
   M.country()
 end
 
-vim.api.nvim_create_user_command("Whereami", "lua require('whereami').whereami()", {
+vim.api.nvim_create_user_command("Whereami",
+  function(opts)
+    local option = opts.fargs[1]
+    if option == "country" then
+      M.country()
+    elseif option == "city" then
+      M.city()
+    elseif option == "ip" then
+      M.ip()
+    else
+      M.country()
+    end
+  end,
+{ nargs = "*",
+  complete = function(ArgLead, CmdLine, CursorPos)
+    -- return completion candidates as a list-like table
+    return { "city", "country", "ip" }
+  end,
   desc = "Location where the current location was originated from.",
-  nargs = 0,
 })
+
+-- vim.api.nvim_create_user_command("Whereami", "lua require('whereami').whereami()", {
+--   desc = "Location where the current location was originated from.",
+--   nargs = 0,
+-- })
 
 return M
