@@ -64,4 +64,24 @@ M.whereami = function()
 	M.country()
 end
 
+vim.api.nvim_create_user_command("Whereami", function(opts)
+	local option = opts.fargs[1]
+	if option == "country" then
+		M.country()
+	elseif option == "city" then
+		M.city()
+	elseif option == "ip" then
+		M.ip()
+	else
+		M.country()
+	end
+end, {
+	nargs = "*",
+	complete = function(ArgLead, CmdLine, CursorPos)
+		-- return completion candidates as a list-like table
+		return { "city", "country", "ip" }
+	end,
+	desc = "Location where the current location was originated from.",
+})
+
 return M
