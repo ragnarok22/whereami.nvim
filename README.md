@@ -1,7 +1,9 @@
 # Whereami.nvim
+
 An easy way to test your VPN by getting your current location without leaving Neovim.
 
 ## Installation
+
 [lazy](https://github.com/folke/lazy.nvim):
 
     {
@@ -24,9 +26,10 @@ An easy way to test your VPN by getting your current location without leaving Ne
     use 'ragnarok22/whereami.nvim'
 and then execute `:PackerUpdate`.
 
-### Usage with [nvim-notify](https://github.com/rcarriga/nvim-notify):
+### Usage with [nvim-notify](https://github.com/rcarriga/nvim-notify)
 
-You only need to install [nvim-notify](https://github.com/rcarriga/nvim-notify) and set the notify:
+You only need to install
+[nvim-notify](https://github.com/rcarriga/nvim-notify) and set the notify:
 
 ```lua
 vim.notify = require("notify")
@@ -47,9 +50,11 @@ Here an example of installation using lazy:
 ```
 
 ## Usage
+
 You can use the command or the API
 
 ### Command
+
 Just type the command `:Whereami` and you will see the country you are.
 
 You can also provide and argument:
@@ -59,6 +64,7 @@ You can also provide and argument:
 - `:Whereami ip`: Show the ip location where you request was originated from.
 
 ### API
+
 You can also use the methods, for example for key bindings
 
 ```lua
@@ -72,3 +78,7 @@ vim.keymap.set("n", "<leader>l", whereami.country, { desc = "Show the country" }
 vim.keymap.set("n", "<leader>e", whereami.city, { desc = "Show the city" })
 vim.keymap.set("n", "<leader>i", whereami.ip, { desc = "Show the ip" })
 ```
+
+## License
+
+[GNU GPLv3](LICENSE)
