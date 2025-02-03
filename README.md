@@ -6,24 +6,31 @@ An easy way to test your VPN by getting your current location without leaving Ne
 
 [lazy](https://github.com/folke/lazy.nvim):
 
-    {
-        "ragnarok22/whereami.nvim",
-        cmd = "Whereami"
-    }
+```lua
+{
+    "ragnarok22/whereami.nvim",
+    cmd = "Whereami"
+}
+```
 
 [pckr](https://github.com/lewis6991/pckr.nvim):
 
-    {
-        'ragnarok22/whereami.nvim',
-        -- Lazy loading on specific command
-        cond = {
-            cmd {'Whereami'}
-        }
+```lua
+{
+    'ragnarok22/whereami.nvim',
+    -- Lazy loading on specific command
+    cond = {
+        cmd {'Whereami'}
     }
+}
+```
 
 [packer](https://github.com/wbthomason/packer.nvim) (deprecated):
 
-    use 'ragnarok22/whereami.nvim'
+```lua
+use 'ragnarok22/whereami.nvim'
+```
+
 and then execute `:PackerUpdate`.
 
 ### Usage with [nvim-notify](https://github.com/rcarriga/nvim-notify)
@@ -36,6 +43,7 @@ vim.notify = require("notify")
 ```
 
 Here an example of installation using lazy:
+
 ```lua
 {
   "ragnarok22/whereami.nvim",
