@@ -61,6 +61,11 @@ M.ip = function()
 	vim.notify("You IP is " .. data.ip, vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
 end
 
+M.isp = function()
+	local data = get_data()
+	vim.notify("You ISP is " .. data.org, vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
+end
+
 M.whereami = function()
 	M.country()
 end
@@ -73,6 +78,8 @@ vim.api.nvim_create_user_command("Whereami", function(opts)
 		M.city()
 	elseif option == "ip" then
 		M.ip()
+	elseif option == "isp" then
+		M.isp()
 	else
 		M.country()
 	end
@@ -80,7 +87,7 @@ end, {
 	nargs = "*",
 	complete = function(ArgLead, CmdLine, CursorPos)
 		-- return completion candidates as a list-like table
-		return { "city", "country", "ip" }
+		return { "city", "country", "ip", "isp" }
 	end,
 	desc = "Location where the current location was originated from.",
 })
