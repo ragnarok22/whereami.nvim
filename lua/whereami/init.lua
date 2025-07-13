@@ -2,7 +2,8 @@ local M = {}
 local curl = require("plenary.curl")
 
 local function get_data()
-	local data = vim.json.decode(curl.get("ipconfig.io/json").body)
+	local IP_URL = "https://checkip.amazonaws.com"
+	local data = vim.json.decode(curl.get(IP_URL).body)
 	return data
 end
 
