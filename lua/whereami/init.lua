@@ -2,7 +2,7 @@ local M = {}
 local curl = require("plenary.curl")
 
 local function get_data()
-	local IP_URL = "https://checkip.amazonaws.com"
+	local IP_URL = "ipinfo.io"
 	local data = vim.json.decode(curl.get(IP_URL).body)
 	return data
 end
@@ -43,7 +43,7 @@ end
 
 M.country = function()
 	local data = get_data()
-	local icon = get_flag(data.country_iso)
+	local icon = get_flag(data.country)
 	if not icon then
 		icon = "🌎"
 	end
