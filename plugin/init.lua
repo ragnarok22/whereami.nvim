@@ -1,1 +1,2 @@
-vim.api.nvim_command('command! Whereami lua require("whereami").whereami()')
+-- Load the module so it can register the :Whereami command
+require("whereami")
