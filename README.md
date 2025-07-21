@@ -87,6 +87,17 @@ vim.keymap.set("n", "<leader>e", whereami.city, { desc = "Show the city" })
 vim.keymap.set("n", "<leader>i", whereami.ip, { desc = "Show the ip" })
 ```
 
+## Testing
+
+The plugin uses [plenary.nvim](https://github.com/nvim-lua/plenary.nvim) for
+its test suite. You can run the tests from the project root with:
+
+```bash
+nvim --headless -c "PlenaryBustedDirectory lua/tests {minimal_init = 'tests/minimal_init.lua'}" +qa
+```
+
+The command requires Neovim and plenary.nvim to be installed.
+
 ## License
 
 [GNU GPLv3](LICENSE)
