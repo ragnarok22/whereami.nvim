@@ -2,8 +2,8 @@ local stub = require('luassert.stub')
 local whereami = require('whereami')
 local curl = require('plenary.curl')
 
--- get reference to the local get_flag function via debug upvalue
-local get_flag = debug.getupvalue(whereami.country, 2)
+-- debug.getupvalue returns the upvalue name and value. We only want the value
+local _, get_flag = debug.getupvalue(whereami.country, 2)
 
 describe('whereami', function()
   it('returns proper flag emoji', function()
