@@ -2,6 +2,13 @@
 
 An easy way to test your VPN by getting your current location without leaving Neovim.
 
+## Features
+
+- Country flag notification
+- City and IP information
+- ISP lookup
+- Works with [nvim-notify](https://github.com/rcarriga/nvim-notify)
+
 ## Installation
 
 [lazy](https://github.com/folke/lazy.nvim):
@@ -35,14 +42,13 @@ and then execute `:PackerUpdate`.
 
 ### Usage with [nvim-notify](https://github.com/rcarriga/nvim-notify)
 
-You only need to install
-[nvim-notify](https://github.com/rcarriga/nvim-notify) and set the notify:
+Install [nvim-notify](https://github.com/rcarriga/nvim-notify) and set it as the default notifier:
 
 ```lua
 vim.notify = require("notify")
 ```
 
-Here an example of installation using lazy:
+Here is an example of installation using lazy:
 
 ```lua
 {
@@ -63,13 +69,14 @@ You can use the command or the API
 
 ### Command
 
-Just type the command `:Whereami` and you will see the country you are.
+Run `:Whereami` to display the country you are in.
 
-You can also provide and argument:
+You can also provide an argument:
 
 - `:Whereami country`: Show the country location where you request was originated from.
 - `:Whereami city`: Show the city location where you request was originated from.
-- `:Whereami ip`: Show the ip location where you request was originated from.
+- `:Whereami ip`: Show the IP address where your request originated from.
+- `:Whereami isp`: Show your current internet service provider.
 
 ### API
 
@@ -80,11 +87,13 @@ local whereami = require("whereami")
 whereami.country() -- show the country
 whereami.city() -- show the city
 whereami.ip() -- show the IP
+whereami.isp() -- show the ISP
 
 -- set keymaps
 vim.keymap.set("n", "<leader>l", whereami.country, { desc = "Show the country" })
 vim.keymap.set("n", "<leader>e", whereami.city, { desc = "Show the city" })
 vim.keymap.set("n", "<leader>i", whereami.ip, { desc = "Show the ip" })
+vim.keymap.set("n", "<leader>s", whereami.isp, { desc = "Show the ISP" })
 ```
 
 ## Testing
@@ -97,6 +106,8 @@ nvim --headless -c "PlenaryBustedDirectory lua/tests {minimal_init = 'tests/mini
 ```
 
 The command requires Neovim and plenary.nvim to be installed.
+
+See [SECURITY.md](SECURITY.md) for details on our security policy.
 
 ## License
 
