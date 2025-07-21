@@ -44,9 +44,9 @@ end
 M.country = function()
 	local data = get_data()
 	local icon = get_flag(data.country)
-	if not icon then
-		icon = "🌎"
-	end
+        if not icon or icon == "" then
+                icon = "🌎"
+        end
 
 	vim.notify("You are in " .. icon .. data.country, vim.log.levels.INFO, { title = "Where am I?", icon = icon })
 end
