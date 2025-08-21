@@ -1,5 +1,7 @@
 # Whereami.nvim
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ragnarok22/whereami.nvim)
+
 An easy way to test your VPN by getting your current location without leaving Neovim.
 
 ## Features
