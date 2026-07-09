@@ -1,6 +1,12 @@
 local M = {}
 local curl = require("plenary.curl")
 
+local available_options = { "country", "city", "ip", "isp", "all" }
+
+local function available_options_text()
+	return table.concat(available_options, ", ")
+end
+
 local function get_data()
 	local IP_URL = "ipinfo.io"
 	local data = vim.json.decode(curl.get(IP_URL).body)
@@ -66,13 +72,22 @@ M.isp = function()
 	vim.notify("You ISP is " .. data.org, vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
 end
 
+M.all = function()
+	M.country()
+	M.city()
+	M.ip()
+	M.isp()
+end
+
 M.whereami = function()
 	M.country()
 end
 
 vim.api.nvim_create_user_command("Whereami", function(opts)
 	local option = opts.fargs[1]
-	if option == "country" then
+	if option == nil then
+		M.country()
+	elseif option == "country" then
 		M.country()
 	elseif option == "city" then
 		M.city()
@@ -80,14 +95,20 @@ vim.api.nvim_create_user_command("Whereami", function(opts)
 		M.ip()
 	elseif option == "isp" then
 		M.isp()
+	elseif option == "all" then
+		M.all()
 	else
-		M.country()
+		vim.notify(
+			"Unknown option: " .. option .. "\nAvailable options: " .. available_options_text(),
+			vim.log.levels.WARN,
+			{ title = "Where am I?" }
+		)
 	end
 end, {
 	nargs = "*",
 	complete = function(ArgLead, CmdLine, CursorPos)
 		-- return completion candidates as a list-like table
-		return { "city", "country", "ip", "isp" }
+		return available_options
 	end,
 	desc = "Location where the current location was originated from.",
 })
