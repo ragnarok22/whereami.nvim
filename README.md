@@ -80,6 +80,10 @@ You can also provide an argument:
 - `:Whereami ip`: Show the IP address where your request originated from.
 - `:Whereami isp`: Show your current internet service provider.
 
+### Health checks
+
+Run `:checkhealth whereami` to verify that `plenary.curl` is available, JSON decoding works, `vim.notify` customization is detected, and the location provider can be reached.
+
 ### API
 
 You can also use the methods, for example for key bindings
