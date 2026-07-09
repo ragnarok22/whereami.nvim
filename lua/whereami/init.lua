@@ -1,7 +1,7 @@
 local M = {}
 local curl = require("plenary.curl")
 
-local available_options = { "country", "city", "ip", "isp", "all" }
+local available_options = { "country", "city", "ip", "isp" }
 
 local function available_options_text()
 	return table.concat(available_options, ", ")
@@ -72,13 +72,6 @@ M.isp = function()
 	vim.notify("You ISP is " .. data.org, vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
 end
 
-M.all = function()
-	M.country()
-	M.city()
-	M.ip()
-	M.isp()
-end
-
 M.whereami = function()
 	M.country()
 end
@@ -95,8 +88,6 @@ vim.api.nvim_create_user_command("Whereami", function(opts)
 		M.ip()
 	elseif option == "isp" then
 		M.isp()
-	elseif option == "all" then
-		M.all()
 	else
 		vim.notify(
 			"Unknown option: " .. option .. "\nAvailable options: " .. available_options_text(),

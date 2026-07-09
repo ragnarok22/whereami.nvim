@@ -52,7 +52,7 @@ describe('whereami', function()
     vim.cmd('Whereami foo')
 
     assert.stub(vim.notify).was_called_with(
-      'Unknown option: foo\nAvailable options: country, city, ip, isp, all',
+      'Unknown option: foo\nAvailable options: country, city, ip, isp',
       vim.log.levels.WARN,
       { title = 'Where am I?' }
     )
