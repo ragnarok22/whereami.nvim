@@ -158,6 +158,11 @@ You can use the command or the API
 
 Run `:Whereami` to display the country you are in.
 
+For VPN testing, run `:Whereami all` after connecting or switching servers to
+confirm that your country, city, IP address, and ISP match the expected VPN exit
+location. Use `:Whereami refresh` first if you want to bypass cached location
+data and force a fresh provider request.
+
 You can also provide an argument:
 
 - `:Whereami country`: Show the country location where your request originated from.
@@ -195,6 +200,22 @@ vim.keymap.set("n", "<leader>l", whereami.country, { desc = "Show the country" }
 vim.keymap.set("n", "<leader>e", whereami.city, { desc = "Show the city" })
 vim.keymap.set("n", "<leader>i", whereami.ip, { desc = "Show the ip" })
 vim.keymap.set("n", "<leader>s", whereami.isp, { desc = "Show the ISP" })
+```
+
+For a VPN-focused workflow, bind the checks you run most often:
+
+```lua
+vim.keymap.set("n", "<leader>vc", require("whereami").country, {
+  desc = "Check VPN country",
+})
+
+vim.keymap.set("n", "<leader>va", require("whereami").all, {
+  desc = "Check VPN location details",
+})
+
+vim.keymap.set("n", "<leader>vr", require("whereami").refresh, {
+  desc = "Refresh VPN location",
+})
 ```
 
 
