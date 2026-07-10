@@ -59,7 +59,7 @@ function M.check()
 	end
 
 	if vim.json and vim.json.decode then
-		local decoded_ok, decoded = pcall(vim.json.decode, '{"whereami":true}')
+		local decoded_ok, decoded = pcall(vim.json.decode, "{\"whereami\":true}")
 		if decoded_ok and decoded and decoded.whereami == true then
 			ok("JSON decoding works")
 		else
