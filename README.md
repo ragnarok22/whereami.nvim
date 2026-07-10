@@ -75,8 +75,8 @@ Run `:Whereami` to display the country you are in.
 
 You can also provide an argument:
 
-- `:Whereami country`: Show the country location where you request was originated from.
-- `:Whereami city`: Show the city location where you request was originated from.
+- `:Whereami country`: Show the country location where your request originated from.
+- `:Whereami city`: Show the city location where your request originated from.
 - `:Whereami ip`: Show the IP address where your request originated from.
 - `:Whereami isp`: Show your current internet service provider.
 

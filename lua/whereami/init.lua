@@ -58,12 +58,12 @@ end
 
 M.ip = function()
 	local data = get_data()
-	vim.notify("You IP is " .. data.ip, vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
+	vim.notify("Your IP is " .. data.ip, vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
 end
 
 M.isp = function()
 	local data = get_data()
-	vim.notify("You ISP is " .. data.org, vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
+	vim.notify("Your ISP is " .. data.org, vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
 end
 
 M.whereami = function()
