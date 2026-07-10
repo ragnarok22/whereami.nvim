@@ -1,93 +1,279 @@
 local M = {}
-local curl = require("plenary.curl")
+local providers = require("whereami.providers")
+local flag = require("whereami.flag")
 
-local function get_data()
-	local IP_URL = "ipinfo.io"
-	local data = vim.json.decode(curl.get(IP_URL).body)
-	return data
+local available_options = { "all", "city", "country", "ip", "isp", "json", "refresh" }
+
+local function available_options_text()
+	return table.concat(available_options, ", ")
 end
 
--- TODO: find a better way to do this. So far utf8.char() is the only way I found but is not available in lua 5.1
-local function get_flag(country_iso)
-	local flag_icon = ""
-	for i = 1, #country_iso do
-		local code_point = country_iso:byte(i) + 127397
-		if code_point <= 0x7F then
-			flag_icon = flag_icon .. string.char(code_point)
-		elseif code_point <= 0x7FF then
-			flag_icon = flag_icon .. string.char(0xC0 + math.floor(code_point / 0x40), 0x80 + code_point % 0x40)
-		elseif code_point <= 0xFFFF then
-			flag_icon = flag_icon
-				.. string.char(
-					0xE0 + math.floor(code_point / 0x1000),
-					0x80 + math.floor((code_point % 0x1000) / 0x40),
-					0x80 + code_point % 0x40
-				)
-		elseif code_point <= 0x10FFFF then
-			flag_icon = flag_icon
-				.. string.char(
-					0xF0 + math.floor(code_point / 0x40000),
-					0x80 + math.floor((code_point % 0x40000) / 0x1000),
-					0x80 + math.floor((code_point % 0x1000) / 0x40),
-					0x80 + code_point % 0x40
-				)
-		end
+local function is_available_option(option)
+	return vim.tbl_contains(available_options, option)
+end
+
+local default_config = {
+	providers = nil,
+	provider_url = nil,
+	timeout = 5000,
+	notification = {
+		title = "Where am I?",
+		icons = {
+			country_fallback = "🌎",
+			default = "❔",
+		},
+	},
+	default_command = "country",
+	cache_ttl = 300000,
+	privacy = {
+		mask_ip = false,
+		hide_city = false,
+		hide_isp = false,
+	},
+	hooks = {
+		before_request = nil,
+		after_request = nil,
+	},
+}
+
+local config = vim.deepcopy(default_config)
+local cache = {
+	data = nil,
+	updated_at = 0,
+}
+
+local function merge_config(opts)
+	config = vim.tbl_deep_extend("force", vim.deepcopy(default_config), opts or {})
+end
+
+local function notify_error(message)
+	vim.notify(message, vim.log.levels.ERROR, { title = config.notification.title, icon = "❌" })
+end
+
+local function notify_unknown_option(option)
+	vim.notify(
+		"Unknown option: " .. option .. "\nAvailable options: " .. available_options_text(),
+		vim.log.levels.WARN,
+		{ title = config.notification.title }
+	)
+end
+
+local function get_data(opts)
+	opts = opts or {}
+	local now = vim.loop.now()
+	if not opts.refresh and config.cache_ttl > 0 and cache.data and (now - cache.updated_at) < config.cache_ttl then
+		return cache.data
 	end
 
-	-- for i = 1, #country_iso do
-	--     local charCode = string.byte(country_iso:sub(i, i)) + 127397
-	--     flag_icon = flag_icon .. utf8.char(charCode)
-	-- end
-	return flag_icon
+	if config.hooks.before_request then
+		config.hooks.before_request(config)
+	end
+
+	local parse_error = false
+	for _, provider in ipairs(providers.list(config)) do
+		local data, err = providers.fetch(provider, config)
+		if data then
+			cache.data = data
+			cache.updated_at = vim.loop.now()
+
+			if config.hooks.after_request then
+				config.hooks.after_request(data, config)
+			end
+
+			return data
+		end
+		parse_error = parse_error or err == "Unable to parse location data."
+	end
+
+	if parse_error then
+		return nil, "Unable to parse location data."
+	end
+	return nil, "Unable to fetch location data."
+end
+
+local function notify(message, icon)
+	vim.notify(message, vim.log.levels.INFO, { title = config.notification.title, icon = icon })
+end
+
+local function get_country_icon(country)
+	return flag.get_flag(country, config.notification.icons.country_fallback)
+end
+
+local function notify_country(data)
+	local icon = get_country_icon(data.country)
+	notify("You are in " .. icon .. (data.country or "unknown"), icon)
+end
+
+M.setup = function(opts)
+	merge_config(opts)
+	cache.data = nil
+	cache.updated_at = 0
+end
+
+M.clear_cache = function()
+	cache.data = nil
+	cache.updated_at = 0
+end
+
+M.refresh = function()
+	M.clear_cache()
+	return get_data({ refresh = true })
+end
+
+M.get = function()
+	return get_data()
+end
+
+local function mask_ip(ip)
+	if type(ip) ~= "string" or ip == "" then
+		return "hidden"
+	end
+
+	local first_octet, second_octet = ip:match("^(%d+)%.(%d+)%.%d+%.%d+$")
+	if first_octet and second_octet then
+		return first_octet .. "." .. second_octet .. ".xxx.xxx"
+	end
+
+	local first_group, second_group = ip:match("^([%x]+):([%x]+):")
+	if first_group and second_group then
+		return first_group .. ":" .. second_group .. ":xxxx:xxxx:xxxx:xxxx:xxxx:xxxx"
+	end
+
+	return "hidden"
+end
+
+local function format_ip(ip)
+	if config.privacy.mask_ip then
+		return mask_ip(ip)
+	end
+
+	return ip or "unknown"
+end
+
+local function format_city(city)
+	if config.privacy.hide_city then
+		return "hidden"
+	end
+
+	return city or "unknown"
+end
+
+local function format_isp(isp)
+	if config.privacy.hide_isp then
+		return "hidden"
+	end
+
+	return isp or "unknown"
 end
 
 M.country = function()
-	local data = get_data()
-	local icon = get_flag(data.country)
-	if not icon or icon == "" then
-		icon = "🌎"
+	local data, err = get_data()
+	if not data then
+		notify_error(err)
+		return
 	end
 
-	vim.notify("You are in " .. icon .. data.country, vim.log.levels.INFO, { title = "Where am I?", icon = icon })
+	notify_country(data)
 end
 
 M.city = function()
-	local data = get_data()
-	vim.notify("You are in " .. data.city, vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
+	local data, err = get_data()
+	if not data then
+		notify_error(err)
+		return
+	end
+
+	notify("You are in " .. format_city(data.city), config.notification.icons.default)
 end
 
 M.ip = function()
-	local data = get_data()
-	vim.notify("You IP is " .. data.ip, vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
+	local data, err = get_data()
+	if not data then
+		notify_error(err)
+		return
+	end
+
+	notify("Your IP is " .. format_ip(data.ip), config.notification.icons.default)
 end
 
 M.isp = function()
-	local data = get_data()
-	vim.notify("You ISP is " .. data.org, vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
+	local data, err = get_data()
+	if not data then
+		notify_error(err)
+		return
+	end
+
+	notify("Your ISP is " .. format_isp(data.org), config.notification.icons.default)
+end
+
+M.all = function()
+	local data, err = get_data()
+	if not data then
+		notify_error(err)
+		return
+	end
+
+	local icon = get_country_icon(data.country)
+	local summary = table.concat({
+		"Country: " .. icon .. (data.country or "unknown"),
+		"City: " .. format_city(data.city),
+		"IP: " .. format_ip(data.ip),
+		"ISP: " .. format_isp(data.org),
+	}, "\n")
+
+	notify(summary, icon)
 end
 
 M.whereami = function()
-	M.country()
+	local handler = M[config.default_command] or M.country
+	handler()
 end
 
 vim.api.nvim_create_user_command("Whereami", function(opts)
 	local option = opts.fargs[1]
-	if option == "country" then
-		M.country()
-	elseif option == "city" then
-		M.city()
-	elseif option == "ip" then
-		M.ip()
-	elseif option == "isp" then
-		M.isp()
+	local extra_option = opts.fargs[2]
+	if extra_option ~= nil then
+		notify_unknown_option(extra_option)
+		return
+	end
+
+	if option == nil then
+		local handler = M[config.default_command] or M.country
+		handler()
+		return
+	end
+
+	if option == "json" then
+		local data, err = M.get()
+		if not data then
+			notify_error(err)
+			return
+		end
+		print(vim.json.encode(data))
+		return
+	end
+
+	if option == "refresh" then
+		local data, err = M.refresh()
+		if not data then
+			notify_error(err)
+			return
+		end
+		notify_country(data)
+		return
+	end
+
+	if is_available_option(option) then
+		M[option]()
 	else
-		M.country()
+		notify_unknown_option(option)
 	end
 end, {
 	nargs = "*",
-	complete = function(ArgLead, CmdLine, CursorPos)
-		-- return completion candidates as a list-like table
-		return { "city", "country", "ip", "isp" }
+	complete = function(arg_lead)
+		return vim.tbl_filter(function(candidate)
+			return vim.startswith(candidate, arg_lead)
+		end, available_options)
 	end,
 	desc = "Location where the current location was originated from.",
 })

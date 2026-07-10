@@ -1,2 +1,2 @@
-vim.opt.runtimepath:append('.')
-vim.opt.runtimepath:append('lua')
+vim.opt.runtimepath:append(".")
+vim.opt.runtimepath:append("lua")
