@@ -1,3 +1,4 @@
+# Use the repository-local vim.yml standard library so Selene recognizes Neovim globals.
 std = "vim"
 exclude = ["lua/tests/**"]
 
