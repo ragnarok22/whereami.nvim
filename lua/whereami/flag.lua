@@ -3,9 +3,10 @@ local M = {}
 local FALLBACK_ICON = "🌎"
 
 -- TODO: find a better way to do this. So far utf8.char() is the only way I found but is not available in lua 5.1
-function M.get_flag(country_iso)
-	if type(country_iso) ~= "string" or not country_iso:match("^%a%a$") then
-		return FALLBACK_ICON
+function M.get_flag(country_iso, fallback_icon)
+	fallback_icon = fallback_icon or FALLBACK_ICON
+	if type(country_iso) ~= "string" or not country_iso:match("^[A-Za-z][A-Za-z]$") then
+		return fallback_icon
 	end
 
 	country_iso = country_iso:upper()
