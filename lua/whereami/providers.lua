@@ -47,8 +47,15 @@ local function is_single_provider(provider)
 	return provider.url ~= nil or provider.fetch ~= nil or provider.normalize ~= nil
 end
 
+local function has_location_value(value)
+	return value ~= nil and value ~= ""
+end
+
 local function has_location_field(data)
-	return data.ip ~= nil or data.city ~= nil or data.country ~= nil or data.org ~= nil
+	return has_location_value(data.ip)
+		or has_location_value(data.city)
+		or has_location_value(data.country)
+		or has_location_value(data.org)
 end
 
 local function unwrap_response(response)

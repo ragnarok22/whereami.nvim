@@ -314,6 +314,53 @@ describe("whereami", function()
 		notify_stub:revert()
 	end)
 
+	it("uses unknown values for blank optional fields", function()
+		local curl_stub = stub(curl, "get", function()
+			return { body = "{\"country\":\"US\",\"city\":\"\",\"ip\":\"\",\"org\":\"\"}" }
+		end)
+		local notify_stub = stub(vim, "notify")
+
+		whereami.city()
+		whereami.ip()
+		whereami.isp()
+
+		assert
+			.stub(vim.notify)
+			.was_called_with("You are in unknown", vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
+		assert
+			.stub(vim.notify)
+			.was_called_with("Your IP is unknown", vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
+		assert
+			.stub(vim.notify)
+			.was_called_with("Your ISP is unknown", vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
+
+		curl_stub:revert()
+		notify_stub:revert()
+	end)
+
+	it("falls back when a provider response only has blank location fields", function()
+		local calls = 0
+		local curl_stub = stub(curl, "get", function(url)
+			calls = calls + 1
+			if url == "https://ipinfo.io/json" then
+				return { status = 200, body = "{\"ip\":\"\",\"city\":\"\",\"country\":\"\",\"org\":\"\"}" }
+			end
+
+			return { status = 200, body = "{\"country_code\":\"CA\",\"city\":\"Toronto\"}" }
+		end)
+		local notify_stub = stub(vim, "notify")
+
+		whereami.country()
+
+		assert.are.equal(2, calls)
+		assert
+			.stub(vim.notify)
+			.was_called_with("You are in 🇨🇦CA", vim.log.levels.INFO, { title = "Where am I?", icon = "🇨🇦" })
+
+		curl_stub:revert()
+		notify_stub:revert()
+	end)
+
 	it("falls back to the next default provider when the first provider fails", function()
 		local calls = 0
 		local curl_stub = stub(curl, "get", function(url)
