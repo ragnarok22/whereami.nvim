@@ -61,6 +61,22 @@ describe('whereami', function()
     country_stub:revert()
     notify_stub:revert()
   end)
+  it('notifies when trailing command arguments are provided after a known option', function()
+    local notify_stub = stub(vim, 'notify')
+    local country_stub = stub(whereami, 'country')
+
+    vim.cmd('Whereami country foo')
+
+    assert.stub(vim.notify).was_called_with(
+      'Unknown option: foo\nAvailable options: country, city, ip, isp',
+      vim.log.levels.WARN,
+      { title = 'Where am I?' }
+    )
+    assert.stub(whereami.country).was_not_called()
+
+    country_stub:revert()
+    notify_stub:revert()
+  end)
 
 end)
 
