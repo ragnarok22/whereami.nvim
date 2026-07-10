@@ -219,13 +219,38 @@ location data. By default, it tries `ipinfo.io` first and falls back to
 ## Testing
 
 The plugin uses [plenary.nvim](https://github.com/nvim-lua/plenary.nvim) for
-its test suite. You can run the tests from the project root with:
+its test suite. The test bootstrap in `tests/minimal_init.lua` adds this plugin
+and common plenary checkout locations to Neovim's runtimepath.
+
+For local development, install Neovim and make plenary available in one of these
+ways:
+
+- Set `PLENARY_NVIM_PATH` to a plenary.nvim checkout. This is the recommended
+  option for CI because the dependency path is explicit.
+- Clone plenary.nvim into `.deps/plenary.nvim`, `deps/plenary.nvim`, or
+  `tests/deps/plenary.nvim` under this repository.
+- Install plenary.nvim with a package manager that checks it out to a standard
+  location such as `stdpath("data") .. "/lazy/plenary.nvim"` or
+  `stdpath("data") .. "/site/pack/vendor/start/plenary.nvim"`.
+
+Example local setup with a repository-local checkout:
+
+```bash
+git clone --depth 1 https://github.com/nvim-lua/plenary.nvim .deps/plenary.nvim
+```
+
+Run the tests from the project root with:
 
 ```bash
 nvim --headless -c "PlenaryBustedDirectory lua/tests {minimal_init = 'tests/minimal_init.lua'}" +qa
 ```
 
-The command requires Neovim and plenary.nvim to be installed.
+The command requires Neovim and plenary.nvim to be installed. If plenary is not
+in one of the default locations above, pass it explicitly:
+
+```bash
+PLENARY_NVIM_PATH=/path/to/plenary.nvim nvim --headless -c "PlenaryBustedDirectory lua/tests {minimal_init = 'tests/minimal_init.lua'}" +qa
+```
 
 See [SECURITY.md](SECURITY.md) for details on our security policy.
 
