@@ -67,6 +67,70 @@ describe("whereami", function()
 		notify_stub:revert()
 	end)
 
+	it("formats a valid country response", function()
+		local curl_stub = stub(curl, "get", function()
+			return { body = "{\"country\":\"US\"}" }
+		end)
+		local notify_stub = stub(vim, "notify")
+
+		whereami.country()
+
+		assert
+			.stub(vim.notify)
+			.was_called_with("You are in 🇺🇸US", vim.log.levels.INFO, { title = "Where am I?", icon = "🇺🇸" })
+
+		curl_stub:revert()
+		notify_stub:revert()
+	end)
+
+	it("formats a city response", function()
+		local curl_stub = stub(curl, "get", function()
+			return { body = "{\"city\":\"New York\"}" }
+		end)
+		local notify_stub = stub(vim, "notify")
+
+		whereami.city()
+
+		assert
+			.stub(vim.notify)
+			.was_called_with("You are in New York", vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
+
+		curl_stub:revert()
+		notify_stub:revert()
+	end)
+
+	it("formats an IP response", function()
+		local curl_stub = stub(curl, "get", function()
+			return { body = "{\"ip\":\"203.0.113.10\"}" }
+		end)
+		local notify_stub = stub(vim, "notify")
+
+		whereami.ip()
+
+		assert
+			.stub(vim.notify)
+			.was_called_with("Your IP is 203.0.113.10", vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
+
+		curl_stub:revert()
+		notify_stub:revert()
+	end)
+
+	it("formats an ISP response", function()
+		local curl_stub = stub(curl, "get", function()
+			return { body = "{\"org\":\"Example ISP\"}" }
+		end)
+		local notify_stub = stub(vim, "notify")
+
+		whereami.isp()
+
+		assert
+			.stub(vim.notify)
+			.was_called_with("Your ISP is Example ISP", vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
+
+		curl_stub:revert()
+		notify_stub:revert()
+	end)
+
 	it("shows all location details in one summary", function()
 		local curl_stub = stub(curl, "get", function()
 			return {
@@ -152,6 +216,23 @@ describe("whereami", function()
 		country_stub:revert()
 	end)
 
+	it("dispatches public commands from :Whereami arguments", function()
+		for _, option in ipairs({ "country", "city", "ip", "isp" }) do
+			local command_stub = stub(whereami, option)
+
+			vim.cmd("Whereami " .. option)
+
+			assert.stub(whereami[option]).was_called(1)
+			command_stub:revert()
+		end
+	end)
+
+	it("returns completion candidates for public command arguments", function()
+		assert.are.same({ "city", "country" }, vim.fn.getcompletion("Whereami c", "cmdline"))
+		assert.are.same({ "ip", "isp" }, vim.fn.getcompletion("Whereami i", "cmdline"))
+		assert.are.same({ "all", "city", "country", "ip", "isp", "json", "refresh" }, vim.fn.getcompletion("Whereami ", "cmdline"))
+	end)
+
 	it("notifies when an unknown command argument is provided", function()
 		local notify_stub = stub(vim, "notify")
 		local country_stub = stub(whereami, "country")
@@ -183,6 +264,30 @@ describe("whereami", function()
 		assert.stub(whereami.country).was_not_called()
 
 		country_stub:revert()
+		notify_stub:revert()
+	end)
+
+	it("uses unknown values when optional fields are missing from available location data", function()
+		local curl_stub = stub(curl, "get", function()
+			return { body = "{\"country\":\"US\"}" }
+		end)
+		local notify_stub = stub(vim, "notify")
+
+		whereami.city()
+		whereami.ip()
+		whereami.isp()
+
+		assert
+			.stub(vim.notify)
+			.was_called_with("You are in unknown", vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
+		assert
+			.stub(vim.notify)
+			.was_called_with("Your IP is unknown", vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
+		assert
+			.stub(vim.notify)
+			.was_called_with("Your ISP is unknown", vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
+
+		curl_stub:revert()
 		notify_stub:revert()
 	end)
 
