@@ -230,7 +230,10 @@ describe("whereami", function()
 	it("returns completion candidates for public command arguments", function()
 		assert.are.same({ "city", "country" }, vim.fn.getcompletion("Whereami c", "cmdline"))
 		assert.are.same({ "ip", "isp" }, vim.fn.getcompletion("Whereami i", "cmdline"))
-		assert.are.same({ "all", "city", "country", "ip", "isp", "json", "refresh" }, vim.fn.getcompletion("Whereami ", "cmdline"))
+		assert.are.same(
+			{ "all", "city", "country", "ip", "isp", "json", "refresh" },
+			vim.fn.getcompletion("Whereami ", "cmdline")
+		)
 	end)
 
 	it("notifies when an unknown command argument is provided", function()
