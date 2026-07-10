@@ -166,7 +166,7 @@ describe('whereami', function()
     vim.cmd('Whereami foo')
 
     assert.stub(vim.notify).was_called_with(
-      'Unknown option: foo\nAvailable options: all, city, country, ip, isp, refresh',
+      'Unknown option: foo\nAvailable options: all, city, country, ip, isp, json, refresh',
       vim.log.levels.WARN,
       { title = 'Where am I?' }
     )
@@ -183,7 +183,7 @@ describe('whereami', function()
     vim.cmd('Whereami country foo')
 
     assert.stub(vim.notify).was_called_with(
-      'Unknown option: foo\nAvailable options: all, city, country, ip, isp, refresh',
+      'Unknown option: foo\nAvailable options: all, city, country, ip, isp, json, refresh',
       vim.log.levels.WARN,
       { title = 'Where am I?' }
     )
@@ -419,5 +419,40 @@ describe('whereami', function()
 
     curl_stub:revert()
     notify_stub:revert()
+  end)
+
+  it('returns raw data without notifying', function()
+    local curl_stub = stub(curl, 'get', function()
+      return { body = '{"ip":"127.0.0.1","city":"Localhost","country":"US","org":"Test ISP"}' }
+    end)
+    local notify_stub = stub(vim, 'notify')
+
+    local data = whereami.get()
+
+    assert.are.equal('127.0.0.1', data.ip)
+    assert.are.equal('Localhost', data.city)
+    assert.are.equal('US', data.country)
+    assert.are.equal('Test ISP', data.org)
+    assert.stub(vim.notify).was_not_called()
+
+    curl_stub:revert()
+    notify_stub:revert()
+  end)
+
+  it('prints raw data as JSON without notifying', function()
+    local curl_stub = stub(curl, 'get', function()
+      return { body = '{"ip":"127.0.0.1"}' }
+    end)
+    local notify_stub = stub(vim, 'notify')
+    local print_stub = stub(_G, 'print')
+
+    vim.cmd('Whereami json')
+
+    assert.stub(_G.print).was_called_with('{"ip":"127.0.0.1"}')
+    assert.stub(vim.notify).was_not_called()
+
+    curl_stub:revert()
+    notify_stub:revert()
+    print_stub:revert()
   end)
 end)

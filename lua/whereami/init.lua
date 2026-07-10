@@ -2,7 +2,7 @@ local M = {}
 local providers = require("whereami.providers")
 local flag = require("whereami.flag")
 
-local available_options = { "all", "city", "country", "ip", "isp", "refresh" }
+local available_options = { "all", "city", "country", "ip", "isp", "json", "refresh" }
 
 local function available_options_text()
 	return table.concat(available_options, ", ")
@@ -115,6 +115,10 @@ M.refresh = function()
 	return get_data({ refresh = true })
 end
 
+M.get = function()
+	return get_data()
+end
+
 M.country = function()
 	local data, err = get_data()
 	if not data then
@@ -189,6 +193,16 @@ vim.api.nvim_create_user_command("Whereami", function(opts)
 	if option == nil then
 		local handler = M[config.default_command] or M.country
 		handler()
+		return
+	end
+
+	if option == "json" then
+		local data, err = M.get()
+		if not data then
+			notify_error(err)
+			return
+		end
+		print(vim.json.encode(data))
 		return
 	end
 
