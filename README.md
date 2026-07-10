@@ -122,6 +122,12 @@ require("whereami").setup({
   -- Cache provider responses for this many milliseconds. Set to 0 to disable.
   cache_ttl = 300000,
 
+  privacy = {
+    mask_ip = false,
+    hide_city = false,
+    hide_isp = false,
+  },
+
   hooks = {
     before_request = function(config)
       -- Runs before a provider request.
@@ -132,6 +138,17 @@ require("whereami").setup({
   },
 })
 ```
+
+### Privacy mode
+
+The privacy options affect notification output from `:Whereami ip`,
+`:Whereami city`, `:Whereami isp`, and `:Whereami all`. With `mask_ip`
+enabled, an IPv4 address such as `203.0.113.42` is displayed as
+`203.0.xxx.xxx`; IPv6 addresses retain only their first two groups. Set
+`hide_city` or `hide_isp` to `true` to display `hidden` instead.
+
+`whereami.get()` and `:Whereami json` continue to return raw normalized data
+for scripting, even when notification privacy options are enabled.
 
 ## Usage
 

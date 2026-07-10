@@ -25,6 +25,11 @@ local default_config = {
 	},
 	default_command = "country",
 	cache_ttl = 300000,
+	privacy = {
+		mask_ip = false,
+		hide_city = false,
+		hide_isp = false,
+	},
 	hooks = {
 		before_request = nil,
 		after_request = nil,
@@ -119,6 +124,48 @@ M.get = function()
 	return get_data()
 end
 
+local function mask_ip(ip)
+	if type(ip) ~= "string" or ip == "" then
+		return "hidden"
+	end
+
+	local first_octet, second_octet = ip:match("^(%d+)%.(%d+)%.%d+%.%d+$")
+	if first_octet and second_octet then
+		return first_octet .. "." .. second_octet .. ".xxx.xxx"
+	end
+
+	local first_group, second_group = ip:match("^([%x]+):([%x]+):")
+	if first_group and second_group then
+		return first_group .. ":" .. second_group .. ":xxxx:xxxx:xxxx:xxxx:xxxx:xxxx"
+	end
+
+	return "hidden"
+end
+
+local function format_ip(ip)
+	if config.privacy.mask_ip then
+		return mask_ip(ip)
+	end
+
+	return ip or "unknown"
+end
+
+local function format_city(city)
+	if config.privacy.hide_city then
+		return "hidden"
+	end
+
+	return city or "unknown"
+end
+
+local function format_isp(isp)
+	if config.privacy.hide_isp then
+		return "hidden"
+	end
+
+	return isp or "unknown"
+end
+
 M.country = function()
 	local data, err = get_data()
 	if not data then
@@ -136,7 +183,7 @@ M.city = function()
 		return
 	end
 
-	notify("You are in " .. (data.city or "unknown"), config.notification.icons.default)
+	notify("You are in " .. format_city(data.city), config.notification.icons.default)
 end
 
 M.ip = function()
@@ -146,7 +193,7 @@ M.ip = function()
 		return
 	end
 
-	notify("Your IP is " .. (data.ip or "unknown"), config.notification.icons.default)
+	notify("Your IP is " .. format_ip(data.ip), config.notification.icons.default)
 end
 
 M.isp = function()
@@ -156,7 +203,7 @@ M.isp = function()
 		return
 	end
 
-	notify("Your ISP is " .. (data.org or "unknown"), config.notification.icons.default)
+	notify("Your ISP is " .. format_isp(data.org), config.notification.icons.default)
 end
 
 M.all = function()
@@ -169,9 +216,9 @@ M.all = function()
 	local icon = get_country_icon(data.country)
 	local summary = table.concat({
 		"Country: " .. icon .. (data.country or "unknown"),
-		"City: " .. (data.city or "unknown"),
-		"IP: " .. (data.ip or "unknown"),
-		"ISP: " .. (data.org or "unknown"),
+		"City: " .. format_city(data.city),
+		"IP: " .. format_ip(data.ip),
+		"ISP: " .. format_isp(data.org),
 	}, "\n")
 
 	notify(summary, icon)
