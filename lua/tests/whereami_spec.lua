@@ -1,6 +1,7 @@
 local stub = require("luassert.stub")
 local whereami = require("whereami")
 local flag = require("whereami.flag")
+local formatter = require("whereami.format")
 local curl = require("plenary.curl")
 
 describe("whereami", function()
@@ -395,6 +396,12 @@ describe("whereami", function()
 
 		curl_stub:revert()
 		notify_stub:revert()
+	end)
+
+	it("formats private location fields without fetching data", function()
+		assert.are.equal("203.0.xxx.xxx", formatter.ip("203.0.113.42", { mask_ip = true }))
+		assert.are.equal("hidden", formatter.city("Springfield", { hide_city = true }))
+		assert.are.equal("hidden", formatter.isp("Example ISP", { hide_isp = true }))
 	end)
 
 	it("masks IP addresses when privacy mask_ip is enabled", function()

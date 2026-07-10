@@ -1,6 +1,7 @@
 local M = {}
-local providers = require("whereami.providers")
-local flag = require("whereami.flag")
+local cache = require("whereami.cache")
+local config = require("whereami.config")
+local formatter = require("whereami.format")
 
 local available_options = { "all", "city", "country", "ip", "isp", "json", "refresh" }
 
@@ -12,161 +13,55 @@ local function is_available_option(option)
 	return vim.tbl_contains(available_options, option)
 end
 
-local default_config = {
-	providers = nil,
-	provider_url = nil,
-	timeout = 5000,
-	notification = {
-		title = "Where am I?",
-		icons = {
-			country_fallback = "🌎",
-			default = "❔",
-		},
-	},
-	default_command = "country",
-	cache_ttl = 300000,
-	privacy = {
-		mask_ip = false,
-		hide_city = false,
-		hide_isp = false,
-	},
-	hooks = {
-		before_request = nil,
-		after_request = nil,
-	},
-}
+local function current_config()
+	return config.get()
+end
 
-local config = vim.deepcopy(default_config)
-local cache = {
-	data = nil,
-	updated_at = 0,
-}
+local function get_data(opts)
+	return cache.get(current_config(), opts)
+end
 
-local function merge_config(opts)
-	config = vim.tbl_deep_extend("force", vim.deepcopy(default_config), opts or {})
+local function notify(message, icon)
+	local cfg = current_config()
+	vim.notify(message, vim.log.levels.INFO, { title = cfg.notification.title, icon = icon })
 end
 
 local function notify_error(message)
-	vim.notify(message, vim.log.levels.ERROR, { title = config.notification.title, icon = "❌" })
+	vim.notify(message, vim.log.levels.ERROR, { title = current_config().notification.title, icon = "❌" })
 end
 
 local function notify_unknown_option(option)
 	vim.notify(
 		"Unknown option: " .. option .. "\nAvailable options: " .. available_options_text(),
 		vim.log.levels.WARN,
-		{ title = config.notification.title }
+		{ title = current_config().notification.title }
 	)
 end
 
-local function get_data(opts)
-	opts = opts or {}
-	local now = vim.loop.now()
-	if not opts.refresh and config.cache_ttl > 0 and cache.data and (now - cache.updated_at) < config.cache_ttl then
-		return cache.data
-	end
-
-	if config.hooks.before_request then
-		config.hooks.before_request(config)
-	end
-
-	local parse_error = false
-	for _, provider in ipairs(providers.list(config)) do
-		local data, err = providers.fetch(provider, config)
-		if data then
-			cache.data = data
-			cache.updated_at = vim.loop.now()
-
-			if config.hooks.after_request then
-				config.hooks.after_request(data, config)
-			end
-
-			return data
-		end
-		parse_error = parse_error or err == "Unable to parse location data."
-	end
-
-	if parse_error then
-		return nil, "Unable to parse location data."
-	end
-	return nil, "Unable to fetch location data."
-end
-
-local function notify(message, icon)
-	vim.notify(message, vim.log.levels.INFO, { title = config.notification.title, icon = icon })
-end
-
-local function get_country_icon(country)
-	return flag.get_flag(country, config.notification.icons.country_fallback)
-end
-
 local function notify_country(data)
-	local icon = get_country_icon(data.country)
+	local cfg = current_config()
+	local icon = formatter.country_icon(data.country, cfg)
 	notify("You are in " .. icon .. (data.country or "unknown"), icon)
 end
 
-M.setup = function(opts)
-	merge_config(opts)
-	cache.data = nil
-	cache.updated_at = 0
+function M.setup(opts)
+	config.setup(opts)
+	cache.clear()
 end
 
-M.clear_cache = function()
-	cache.data = nil
-	cache.updated_at = 0
+function M.clear_cache()
+	cache.clear()
 end
 
-M.refresh = function()
-	M.clear_cache()
-	return get_data({ refresh = true })
+function M.refresh()
+	return cache.refresh(current_config())
 end
 
-M.get = function()
+function M.get()
 	return get_data()
 end
 
-local function mask_ip(ip)
-	if type(ip) ~= "string" or ip == "" then
-		return "hidden"
-	end
-
-	local first_octet, second_octet = ip:match("^(%d+)%.(%d+)%.%d+%.%d+$")
-	if first_octet and second_octet then
-		return first_octet .. "." .. second_octet .. ".xxx.xxx"
-	end
-
-	local first_group, second_group = ip:match("^([%x]+):([%x]+):")
-	if first_group and second_group then
-		return first_group .. ":" .. second_group .. ":xxxx:xxxx:xxxx:xxxx:xxxx:xxxx"
-	end
-
-	return "hidden"
-end
-
-local function format_ip(ip)
-	if config.privacy.mask_ip then
-		return mask_ip(ip)
-	end
-
-	return ip or "unknown"
-end
-
-local function format_city(city)
-	if config.privacy.hide_city then
-		return "hidden"
-	end
-
-	return city or "unknown"
-end
-
-local function format_isp(isp)
-	if config.privacy.hide_isp then
-		return "hidden"
-	end
-
-	return isp or "unknown"
-end
-
-M.country = function()
+function M.country()
 	local data, err = get_data()
 	if not data then
 		notify_error(err)
@@ -176,56 +71,52 @@ M.country = function()
 	notify_country(data)
 end
 
-M.city = function()
+function M.city()
 	local data, err = get_data()
 	if not data then
 		notify_error(err)
 		return
 	end
 
-	notify("You are in " .. format_city(data.city), config.notification.icons.default)
+	local cfg = current_config()
+	notify("You are in " .. formatter.city(data.city, cfg.privacy), cfg.notification.icons.default)
 end
 
-M.ip = function()
+function M.ip()
 	local data, err = get_data()
 	if not data then
 		notify_error(err)
 		return
 	end
 
-	notify("Your IP is " .. format_ip(data.ip), config.notification.icons.default)
+	local cfg = current_config()
+	notify("Your IP is " .. formatter.ip(data.ip, cfg.privacy), cfg.notification.icons.default)
 end
 
-M.isp = function()
+function M.isp()
 	local data, err = get_data()
 	if not data then
 		notify_error(err)
 		return
 	end
 
-	notify("Your ISP is " .. format_isp(data.org), config.notification.icons.default)
+	local cfg = current_config()
+	notify("Your ISP is " .. formatter.isp(data.org, cfg.privacy), cfg.notification.icons.default)
 end
 
-M.all = function()
+function M.all()
 	local data, err = get_data()
 	if not data then
 		notify_error(err)
 		return
 	end
 
-	local icon = get_country_icon(data.country)
-	local summary = table.concat({
-		"Country: " .. icon .. (data.country or "unknown"),
-		"City: " .. format_city(data.city),
-		"IP: " .. format_ip(data.ip),
-		"ISP: " .. format_isp(data.org),
-	}, "\n")
-
+	local summary, icon = formatter.summary(data, current_config())
 	notify(summary, icon)
 end
 
-M.whereami = function()
-	local handler = M[config.default_command] or M.country
+function M.whereami()
+	local handler = M[current_config().default_command] or M.country
 	handler()
 end
 
@@ -238,8 +129,7 @@ vim.api.nvim_create_user_command("Whereami", function(opts)
 	end
 
 	if option == nil then
-		local handler = M[config.default_command] or M.country
-		handler()
+		M.whereami()
 		return
 	end
 
