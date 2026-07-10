@@ -165,7 +165,7 @@ end, {
 			return vim.startswith(candidate, arg_lead)
 		end, available_options)
 	end,
-	desc = "Location where the current location was originated from.",
+	desc = "Show where the current public IP appears to originate from.",
 })
 
 return M
