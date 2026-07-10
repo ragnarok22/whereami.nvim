@@ -563,7 +563,13 @@ describe("whereami", function()
 		local notify_stub = stub(vim, "notify")
 
 		whereami.city()
-		whereami.refresh()
+		assert
+			.stub(vim.notify)
+			.was_called_with("You are in New York", vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
+
+		local fresh_data = whereami.refresh()
+		assert.are.same({ country = "CA", city = "Toronto" }, fresh_data)
+
 		whereami.city()
 
 		assert.are.equal(2, calls)
