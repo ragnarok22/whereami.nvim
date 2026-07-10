@@ -85,9 +85,10 @@ vim.api.nvim_create_user_command("Whereami", function(opts)
 	end
 end, {
 	nargs = "*",
-	complete = function(ArgLead, CmdLine, CursorPos)
-		-- return completion candidates as a list-like table
-		return { "city", "country", "ip", "isp" }
+	complete = function(arg_lead)
+		return vim.tbl_filter(function(item)
+			return vim.startswith(item, arg_lead)
+		end, { "city", "country", "ip", "isp" })
 	end,
 	desc = "Location where the current location was originated from.",
 })
