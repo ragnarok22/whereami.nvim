@@ -98,6 +98,27 @@ vim.keymap.set("n", "<leader>i", whereami.ip, { desc = "Show the ip" })
 vim.keymap.set("n", "<leader>s", whereami.isp, { desc = "Show the ISP" })
 ```
 
+
+## Privacy and provider
+
+Whereami.nvim contacts a third-party IP geolocation provider each time you run
+`:Whereami` or call one of the Lua API methods (`country()`, `city()`, `ip()`,
+or `isp()`).
+
+- **Provider:** the plugin currently sends requests to `ipinfo.io`.
+- **Data sent:** the request is made from your current network connection, so the
+  provider receives the source IP address for that request and normal HTTP
+  request metadata such as headers added by Neovim/plenary/curl and network
+  routing information. Whereami.nvim does not send your Neovim buffers, files,
+  editor configuration, or any extra location data.
+- **Provider configuration:** the provider URL is not currently configurable; it
+  is hard-coded to `ipinfo.io` in the plugin implementation.
+- **Local caching:** results are not cached by Whereami.nvim. Each command or API
+  call makes a fresh provider request.
+
+Review the provider's own privacy policy and terms before using the plugin if
+you have specific privacy or compliance requirements.
+
 ## Testing
 
 The plugin uses [plenary.nvim](https://github.com/nvim-lua/plenary.nvim) for
