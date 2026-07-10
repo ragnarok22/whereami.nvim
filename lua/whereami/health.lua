@@ -1,7 +1,6 @@
 local M = {}
 
-local PROVIDER_URL = "https://ipinfo.io"
-
+local PROVIDER_URL = "https://ipinfo.io/json"
 local health = vim.health or {}
 
 local function start(name)
