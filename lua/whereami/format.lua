@@ -1,6 +1,10 @@
 local M = {}
 local flag = require("whereami.flag")
 
+local function present(value)
+	return value ~= nil and value ~= ""
+end
+
 function M.country_icon(country, config)
 	config = config or {}
 	local notification = config.notification or {}
@@ -11,7 +15,7 @@ end
 function M.ip(ip, privacy)
 	privacy = privacy or {}
 	if not privacy.mask_ip then
-		return ip or "unknown"
+		return present(ip) and ip or "unknown"
 	end
 
 	if type(ip) ~= "string" or ip == "" then
@@ -36,7 +40,7 @@ function M.city(city, privacy)
 		return "hidden"
 	end
 
-	return city or "unknown"
+	return present(city) and city or "unknown"
 end
 
 function M.isp(isp, privacy)
@@ -44,7 +48,7 @@ function M.isp(isp, privacy)
 		return "hidden"
 	end
 
-	return isp or "unknown"
+	return present(isp) and isp or "unknown"
 end
 
 function M.summary(data, config)
@@ -53,7 +57,7 @@ function M.summary(data, config)
 	local privacy = config.privacy or {}
 	local icon = M.country_icon(data.country, config)
 	return table.concat({
-		"Country: " .. icon .. (data.country or "unknown"),
+		"Country: " .. icon .. (present(data.country) and data.country or "unknown"),
 		"City: " .. M.city(data.city, privacy),
 		"IP: " .. M.ip(data.ip, privacy),
 		"ISP: " .. M.isp(data.org, privacy),
