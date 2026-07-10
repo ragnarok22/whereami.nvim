@@ -237,7 +237,7 @@ describe("whereami", function()
 	end)
 
 	it("dispatches public commands from :Whereami arguments", function()
-		for _, option in ipairs({ "country", "city", "ip", "isp" }) do
+		for _, option in ipairs({ "all", "country", "city", "ip", "isp" }) do
 			local command_stub = stub(whereami, option)
 
 			vim.cmd("Whereami " .. option)
