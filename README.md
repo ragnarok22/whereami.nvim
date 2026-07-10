@@ -79,6 +79,7 @@ You can also provide an argument:
 - `:Whereami city`: Show the city location where you request was originated from.
 - `:Whereami ip`: Show the IP address where your request originated from.
 - `:Whereami isp`: Show your current internet service provider.
+- `:Whereami json`: Print the raw location data as JSON for command-line use.
 
 ### API
 
@@ -90,6 +91,8 @@ whereami.country() -- show the country
 whereami.city() -- show the city
 whereami.ip() -- show the IP
 whereami.isp() -- show the ISP
+
+local data = whereami.get() -- return raw structured location data without notifying
 
 -- set keymaps
 vim.keymap.set("n", "<leader>l", whereami.country, { desc = "Show the country" })

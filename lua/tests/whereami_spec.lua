@@ -36,6 +36,24 @@ describe('whereami', function()
     curl_stub:revert()
     notify_stub:revert()
   end)
+
+  it('returns raw data without notifying', function()
+    local curl_stub = stub(curl, 'get', function()
+      return { body = '{"ip":"127.0.0.1","city":"Localhost","country":"US","org":"Test ISP"}' }
+    end)
+    local notify_stub = stub(vim, 'notify')
+
+    local data = whereami.get()
+
+    assert.are.equal('127.0.0.1', data.ip)
+    assert.are.equal('Localhost', data.city)
+    assert.are.equal('US', data.country)
+    assert.are.equal('Test ISP', data.org)
+    assert.stub(vim.notify).was_not_called()
+
+    curl_stub:revert()
+    notify_stub:revert()
+  end)
 end)
 
 

@@ -7,6 +7,10 @@ local function get_data()
 	return data
 end
 
+M.get = function()
+	return get_data()
+end
+
 -- TODO: find a better way to do this. So far utf8.char() is the only way I found but is not available in lua 5.1
 local function get_flag(country_iso)
 	local flag_icon = ""
@@ -44,9 +48,9 @@ end
 M.country = function()
 	local data = get_data()
 	local icon = get_flag(data.country)
-        if not icon or icon == "" then
-                icon = "🌎"
-        end
+	if not icon or icon == "" then
+		icon = "🌎"
+	end
 
 	vim.notify("You are in " .. icon .. data.country, vim.log.levels.INFO, { title = "Where am I?", icon = icon })
 end
@@ -74,6 +78,8 @@ vim.api.nvim_create_user_command("Whereami", function(opts)
 	local option = opts.fargs[1]
 	if option == "country" then
 		M.country()
+	elseif option == "json" then
+		print(vim.json.encode(M.get()))
 	elseif option == "city" then
 		M.city()
 	elseif option == "ip" then
@@ -87,7 +93,7 @@ end, {
 	nargs = "*",
 	complete = function(ArgLead, CmdLine, CursorPos)
 		-- return completion candidates as a list-like table
-		return { "city", "country", "ip", "isp" }
+		return { "city", "country", "ip", "isp", "json" }
 	end,
 	desc = "Location where the current location was originated from.",
 })
