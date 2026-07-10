@@ -1,86 +1,159 @@
 # Whereami.nvim
 
+[![CI](https://github.com/ragnarok22/whereami.nvim/actions/workflows/test.yml/badge.svg)](https://github.com/ragnarok22/whereami.nvim/actions/workflows/test.yml)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ragnarok22/whereami.nvim)
 
-An easy way to test your VPN by getting your current location without leaving Neovim.
+Check the approximate location of your current public IP without leaving Neovim. Whereami.nvim is useful for confirming that a VPN is connected to the expected country, city, and network.
+
+> [!NOTE]
+> IP geolocation is approximate. It identifies the location associated with your public or VPN exit IP, not your exact physical location.
 
 ## Features
 
-- Country flag notification
-- City and IP information
-- ISP lookup
-- Works with [nvim-notify](https://github.com/rcarriga/nvim-notify)
+- Country code and flag notifications
+- City, public IP, and network organization details
+- Automatic fallback between location providers
+- In-memory response caching and manual refreshes
+- Optional display masking for private location fields
+- Support for Neovim's built-in notifications and [nvim-notify](https://github.com/rcarriga/nvim-notify)
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [Privacy and Network Behavior](#privacy-and-network-behavior)
+- [Health Checks](#health-checks)
+- [Development](#development)
+- [Contributing and Security](#contributing-and-security)
+- [License](#license)
 
 ## Installation
 
-[lazy](https://github.com/folke/lazy.nvim):
+### Requirements
+
+- Neovim 0.9 or newer
+- [plenary.nvim](https://github.com/nvim-lua/plenary.nvim)
+- Network access to the configured location providers
+- An emoji-capable terminal and font for country flags (optional)
+
+### lazy.nvim
 
 ```lua
 {
+  "ragnarok22/whereami.nvim",
+  cmd = "Whereami",
+  dependencies = { "nvim-lua/plenary.nvim" },
+}
+```
+
+Whereami.nvim works with its defaults, so calling `setup()` is optional. To configure it with [lazy.nvim](https://github.com/folke/lazy.nvim), add an `opts` table:
+
+```lua
+{
+  "ragnarok22/whereami.nvim",
+  cmd = "Whereami",
+  dependencies = { "nvim-lua/plenary.nvim" },
+  opts = {
+    default_command = "all",
+  },
+}
+```
+
+### pckr.nvim
+
+```lua
+local cmd = require("pckr.loader.cmd")
+
+require("pckr").add({
+  {
     "ragnarok22/whereami.nvim",
-    cmd = "Whereami"
-}
+    requires = { "nvim-lua/plenary.nvim" },
+    cond = cmd("Whereami"),
+  },
+})
 ```
 
-[pckr](https://github.com/lewis6991/pckr.nvim):
+### packer.nvim (legacy)
+
+[packer.nvim](https://github.com/wbthomason/packer.nvim) is deprecated, but existing configurations can install Whereami.nvim with:
 
 ```lua
-{
-    'ragnarok22/whereami.nvim',
-    -- Lazy loading on specific command
-    cond = {
-        cmd {'Whereami'}
-    }
-}
+use({
+  "ragnarok22/whereami.nvim",
+  cmd = "Whereami",
+  requires = { "nvim-lua/plenary.nvim" },
+})
 ```
 
-[packer](https://github.com/wbthomason/packer.nvim) (deprecated):
+## Configuration
+
+Call `setup()` to override any defaults. Each call resets unspecified options to their defaults and clears cached location data.
 
 ```lua
-use 'ragnarok22/whereami.nvim'
+require("whereami").setup({
+  default_command = "all",
+  cache_ttl = 300000,
+  privacy = {
+    mask_ip = true,
+    hide_city = false,
+    hide_isp = false,
+  },
+})
 ```
 
-and then execute `:PackerUpdate`.
+### Options
 
-### Usage with [nvim-notify](https://github.com/rcarriga/nvim-notify)
+| Option | Default | Description |
+| --- | --- | --- |
+| `provider_url` | `nil` | Use one provider URL instead of the default provider list. |
+| `providers` | `nil` | A provider string, provider table, or ordered list of providers. |
+| `timeout` | `5000` | Request timeout per provider, in milliseconds. |
+| `default_command` | `"country"` | Notification shown by `:Whereami` and `whereami.whereami()`. Use `country`, `city`, `ip`, `isp`, or `all`. |
+| `cache_ttl` | `300000` | Cache duration in milliseconds. Set to `0` to disable caching. |
+| `notification.title` | `"Where am I?"` | Title passed to `vim.notify`. |
+| `notification.icons.country_fallback` | `"🌎"` | Icon used when a country code is unavailable or invalid. |
+| `notification.icons.default` | `"❔"` | Icon used for non-country notifications. |
+| `privacy.mask_ip` | `false` | Mask part of the IP address in notifications. |
+| `privacy.hide_city` | `false` | Display `hidden` instead of the city in notifications. |
+| `privacy.hide_isp` | `false` | Display `hidden` instead of the network organization in notifications. |
+| `hooks.before_request` | `nil` | Function called before a fresh provider request cycle. |
+| `hooks.after_request` | `nil` | Function called after a fresh response is successfully normalized. |
 
-Install [nvim-notify](https://github.com/rcarriga/nvim-notify) and set it as the default notifier:
+### Notifications
 
-```lua
-vim.notify = require("notify")
-```
-
-Here is an example of installation using lazy:
+Whereami.nvim uses `vim.notify`, so it works with Neovim's default notifications. To use [nvim-notify](https://github.com/rcarriga/nvim-notify) with lazy.nvim:
 
 ```lua
 {
   "ragnarok22/whereami.nvim",
   cmd = "Whereami",
   dependencies = {
-    "rcarriga/nvim-notify",
-    config = function()
-      vim.notify = require("notify")
-    end
-  }
+    "nvim-lua/plenary.nvim",
+    {
+      "rcarriga/nvim-notify",
+      config = function()
+        require("notify").setup({})
+        vim.notify = require("notify")
+      end,
+    },
+  },
 }
 ```
 
+### Providers
 
-## Configuration
+By default, Whereami.nvim tries [ipinfo.io](https://ipinfo.io/) and falls back to [ipapi.co](https://ipapi.co/) if the first provider fails or returns no usable location fields.
 
-`whereami.nvim` works without configuration, but you can call `setup(opts)` to
-override provider fallback behavior, request timeout, notification metadata, default
-command behavior, cache TTL, or request hooks.
+Use `provider_url` for one endpoint that already returns the normalized fields `ip`, `city`, `country`, and `org`:
 
 ```lua
 require("whereami").setup({
-  -- Use one provider URL, or omit this to keep the default ipinfo/ipapi fallback list.
   provider_url = "https://ipinfo.io/json",
 })
 ```
 
-Or define a custom provider or ordered provider list. Each provider can expose
-`url`, `fetch(config)`, and `normalize(data)`.
+For custom response formats, define an ordered provider list and normalize each response:
 
 ```lua
 require("whereami").setup({
@@ -101,179 +174,162 @@ require("whereami").setup({
 })
 ```
 
-Other options can be combined with either provider style:
+Each provider can define:
+
+- `url`: The JSON endpoint requested with `plenary.curl`.
+- `fetch(config)`: A custom request function used instead of `url`.
+- `normalize(data)`: A function that maps the provider response to `ip`, `city`, `country`, and `org`.
+
+`provider_url` takes precedence over `providers`. A normalized response must contain at least one supported location field.
+
+### Request Hooks
+
+Hooks run only for fresh requests, not cache hits:
 
 ```lua
 require("whereami").setup({
-  -- Request timeout passed to plenary.curl, in milliseconds.
-  timeout = 5000,
-
-  notification = {
-    title = "Where am I?",
-    icons = {
-      country_fallback = "🌎",
-      default = "❔",
-    },
-  },
-
-  -- Used by `:Whereami` with no argument and by `require("whereami").whereami()`.
-  default_command = "country",
-
-  -- Cache provider responses for this many milliseconds. Set to 0 to disable.
-  cache_ttl = 300000,
-
-  privacy = {
-    mask_ip = false,
-    hide_city = false,
-    hide_isp = false,
-  },
-
   hooks = {
     before_request = function(config)
-      -- Runs before a provider request.
+      vim.notify("Checking location with a " .. config.timeout .. " ms timeout")
     end,
     after_request = function(data, config)
-      -- Runs after a fresh provider response is decoded.
+      vim.notify("Location response received for " .. (data.ip or "unknown IP"))
     end,
   },
 })
 ```
 
-### Privacy mode
-
-The privacy options affect notification output from `:Whereami ip`,
-`:Whereami city`, `:Whereami isp`, and `:Whereami all`. With `mask_ip`
-enabled, an IPv4 address such as `203.0.113.42` is displayed as
-`203.0.xxx.xxx`; IPv6 addresses retain only their first two groups. Set
-`hide_city` or `hide_isp` to `true` to display `hidden` instead.
-
-`whereami.get()` and `:Whereami json` continue to return raw normalized data
-for scripting, even when notification privacy options are enabled.
+`before_request` runs once before the provider fallback cycle. `after_request` runs only after a provider returns successfully normalized data.
 
 ## Usage
 
-You can use the command or the API
+Run `:Whereami` to show the configured default notification. The default is the country associated with your current public IP.
 
-### Command
+For a complete VPN check:
 
-Run `:Whereami` to display the country you are in.
+```vim
+:Whereami all
+```
 
-For VPN testing, run `:Whereami all` after connecting or switching servers to
-confirm that your country, city, IP address, and ISP match the expected VPN exit
-location. Use `:Whereami refresh` first if you want to bypass cached location
-data and force a fresh provider request.
+To bypass cached data after connecting to a different VPN server:
 
-You can also provide an argument:
+```vim
+:Whereami refresh
+```
 
-- `:Whereami country`: Show the country location where your request originated from.
-- `:Whereami all`: Show a summary with country, city, IP address, and ISP.
-- `:Whereami city`: Show the city location where your request originated from.
-- `:Whereami ip`: Show the IP address where your request originated from.
-- `:Whereami isp`: Show your current internet service provider.
-- `:Whereami json`: Print the raw location data as JSON.
-- `:Whereami refresh`: Clear cached location data, fetch fresh data, then show the country.
+### Commands
 
-### Health checks
+| Command | Behavior |
+| --- | --- |
+| `:Whereami` | Run the configured `default_command`. |
+| `:Whereami country` | Show the country code and flag. |
+| `:Whereami city` | Show the approximate city. |
+| `:Whereami ip` | Show the public IP address. |
+| `:Whereami isp` | Show the network organization or ISP. |
+| `:Whereami all` | Show country, city, IP address, and network organization. |
+| `:Whereami json` | Print normalized, unmasked location data as JSON. |
+| `:Whereami refresh` | Clear the cache, fetch fresh data, and show the country. |
 
-Run `:checkhealth whereami` to verify that `plenary.curl` is available, JSON
-decoding works, `vim.notify` customization is detected, and the default location
-provider can be reached.
-
-### API
-
-You can also use the methods, for example for key bindings
+### Lua API
 
 ```lua
 local whereami = require("whereami")
-whereami.country() -- show the country
-whereami.all() -- show country, city, IP, and ISP
-whereami.city() -- show the city
-whereami.ip() -- show the IP
-whereami.isp() -- show the ISP
-whereami.clear_cache() -- clear cached provider data
-whereami.refresh() -- fetch fresh provider data
 
-local data = whereami.get() -- return raw structured location data without notifying
+whereami.whereami()   -- show the configured default notification
+whereami.country()    -- show the country
+whereami.city()       -- show the city
+whereami.ip()         -- show the public IP
+whereami.isp()        -- show the network organization
+whereami.all()        -- show all location fields
+whereami.clear_cache()
 
--- set keymaps
-vim.keymap.set("n", "<leader>l", whereami.country, { desc = "Show the country" })
-vim.keymap.set("n", "<leader>e", whereami.city, { desc = "Show the city" })
-vim.keymap.set("n", "<leader>i", whereami.ip, { desc = "Show the ip" })
-vim.keymap.set("n", "<leader>s", whereami.isp, { desc = "Show the ISP" })
+local data, err = whereami.get()
+local fresh_data, refresh_err = whereami.refresh()
 ```
 
-For a VPN-focused workflow, bind the checks you run most often:
+`get()` returns normalized location data or `nil, error`. `refresh()` clears the cache and returns freshly fetched data without displaying a success notification. Use `:Whereami refresh` when you want both a fresh request and visible output.
+
+### Keymaps
 
 ```lua
-vim.keymap.set("n", "<leader>vc", require("whereami").country, {
+local whereami = require("whereami")
+
+vim.keymap.set("n", "<leader>vc", whereami.country, {
   desc = "Check VPN country",
 })
 
-vim.keymap.set("n", "<leader>va", require("whereami").all, {
+vim.keymap.set("n", "<leader>va", whereami.all, {
   desc = "Check VPN location details",
 })
 
-vim.keymap.set("n", "<leader>vr", require("whereami").refresh, {
+vim.keymap.set("n", "<leader>vr", "<cmd>Whereami refresh<cr>", {
   desc = "Refresh VPN location",
 })
 ```
 
+## Privacy and Network Behavior
 
-## Privacy and providers
+Whereami.nvim contacts a third-party IP geolocation provider when it needs fresh data.
 
-Whereami.nvim contacts a third-party IP geolocation provider when it needs fresh
-location data. By default, it tries `ipinfo.io` first and falls back to
-`ipapi.co` if the first provider fails or returns unusable data.
+- The provider receives your current public IP address and normal HTTP request metadata.
+- Built-in requests do not send Neovim buffers, files, or editor configuration.
+- IP geolocation is approximate and may report the provider's nearest known network location.
+- Privacy options change notification output only. `whereami.get()` and `:Whereami json` return unmasked normalized data.
+- Successful responses are cached in memory for five minutes by default and are never persisted between Neovim sessions.
+- Provider requests are synchronous and use the configured timeout for each attempted provider.
 
-- **Data sent:** each HTTP request originates from your current network
-  connection, so the contacted provider receives the source IP address and
-  normal HTTP request metadata. Whereami.nvim does not send your Neovim buffers,
-  files, editor configuration, or any extra location data.
-- **Provider configuration:** you can replace the defaults with `provider_url`
-  or an ordered `providers` list. Review the privacy policy and terms of every
-  provider you configure if you have specific privacy or compliance requirements.
-- **Local caching:** successful responses are cached in memory for five minutes
-  by default. Use `cache_ttl` to change the duration or set it to `0` to disable
-  caching. `clear_cache()` removes cached data, while `refresh()` forces a fresh
-  provider request. Cached data is not persisted between Neovim sessions.
+Review the privacy policy and terms of every provider you configure. Use `cache_ttl = 0` to disable caching, `clear_cache()` to remove cached data, or `:Whereami refresh` to force a new request.
 
-## Testing
+## Health Checks
 
-The plugin uses [plenary.nvim](https://github.com/nvim-lua/plenary.nvim) for
-its test suite. The test bootstrap in `tests/minimal_init.lua` adds this plugin
-and common plenary checkout locations to Neovim's runtimepath.
+Run the built-in health check when installation or requests are not working:
 
-For local development, install Neovim and make plenary available in one of these
-ways:
+```vim
+:checkhealth whereami
+```
 
-- Set `PLENARY_NVIM_PATH` to a plenary.nvim checkout. This is the recommended
-  option for CI because the dependency path is explicit.
-- Clone plenary.nvim into `.deps/plenary.nvim`, `deps/plenary.nvim`, or
-  `tests/deps/plenary.nvim` under this repository.
-- Install plenary.nvim with a package manager that checks it out to a standard
-  location such as `stdpath("data") .. "/lazy/plenary.nvim"` or
-  `stdpath("data") .. "/site/pack/vendor/start/plenary.nvim"`.
+It verifies that `plenary.curl` is available, JSON decoding works, reports whether `vim.notify` is customized, and checks connectivity to `https://ipinfo.io/json`. The reachability check always uses ipinfo.io, even when a custom provider is configured.
 
-Example local setup with a repository-local checkout:
+## Development
+
+### Setup
+
+Clone [plenary.nvim](https://github.com/nvim-lua/plenary.nvim) into the recommended repository-local dependency directory:
 
 ```bash
 git clone --depth 1 https://github.com/nvim-lua/plenary.nvim .deps/plenary.nvim
 ```
 
-Run the tests from the project root with:
+Alternatively, set `PLENARY_NVIM_PATH` to an existing checkout. The test bootstrap also recognizes `deps/plenary.nvim`, `tests/deps/plenary.nvim`, and standard lazy.nvim or native package locations.
+
+### Checks
+
+Run formatting and lint checks from the repository root:
+
+```bash
+stylua --check .
+selene .
+```
+
+Run the Plenary test suite with:
 
 ```bash
 nvim --headless -c "PlenaryBustedDirectory lua/tests {minimal_init = 'tests/minimal_init.lua'}" +qa
 ```
 
-The command requires Neovim and plenary.nvim to be installed. If plenary is not
-in one of the default locations above, pass it explicitly:
+Check README links with:
 
 ```bash
-PLENARY_NVIM_PATH=/path/to/plenary.nvim nvim --headless -c "PlenaryBustedDirectory lua/tests {minimal_init = 'tests/minimal_init.lua'}" +qa
+lychee --verbose --no-progress README.md
 ```
 
-See [SECURITY.md](SECURITY.md) for details on our security policy.
+GitHub Actions runs these checks for pushes and pull requests.
+
+## Contributing and Security
+
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+- Follow the project [Code of Conduct](CODE_OF_CONDUCT.md).
+- Report vulnerabilities according to [SECURITY.md](SECURITY.md).
 
 ## License
 
