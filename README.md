@@ -65,6 +65,91 @@ Here is an example of installation using lazy:
 }
 ```
 
+
+## Configuration
+
+`whereami.nvim` works without configuration, but you can call `setup(opts)` to
+override provider fallback behavior, request timeout, notification metadata, default
+command behavior, cache TTL, or request hooks.
+
+```lua
+require("whereami").setup({
+  -- Use one provider URL, or omit this to keep the default ipinfo/ipapi fallback list.
+  provider_url = "https://ipinfo.io/json",
+})
+```
+
+Or define a custom provider or ordered provider list. Each provider can expose
+`url`, `fetch(config)`, and `normalize(data)`.
+
+```lua
+require("whereami").setup({
+  providers = {
+    { url = "https://ipinfo.io/json" },
+    {
+      url = "https://ipapi.co/json/",
+      normalize = function(data)
+        return {
+          ip = data.ip,
+          city = data.city,
+          country = data.country_code,
+          org = data.org or data.asn,
+        }
+      end,
+    },
+  },
+})
+```
+
+Other options can be combined with either provider style:
+
+```lua
+require("whereami").setup({
+  -- Request timeout passed to plenary.curl, in milliseconds.
+  timeout = 5000,
+
+  notification = {
+    title = "Where am I?",
+    icons = {
+      country_fallback = "🌎",
+      default = "❔",
+    },
+  },
+
+  -- Used by `:Whereami` with no argument and by `require("whereami").whereami()`.
+  default_command = "country",
+
+  -- Cache provider responses for this many milliseconds. Set to 0 to disable.
+  cache_ttl = 300000,
+
+  privacy = {
+    mask_ip = false,
+    hide_city = false,
+    hide_isp = false,
+  },
+
+  hooks = {
+    before_request = function(config)
+      -- Runs before a provider request.
+    end,
+    after_request = function(data, config)
+      -- Runs after a fresh provider response is decoded.
+    end,
+  },
+})
+```
+
+### Privacy mode
+
+The privacy options affect notification output from `:Whereami ip`,
+`:Whereami city`, `:Whereami isp`, and `:Whereami all`. With `mask_ip`
+enabled, an IPv4 address such as `203.0.113.42` is displayed as
+`203.0.xxx.xxx`; IPv6 addresses retain only their first two groups. Set
+`hide_city` or `hide_isp` to `true` to display `hidden` instead.
+
+`whereami.get()` and `:Whereami json` continue to return raw normalized data
+for scripting, even when notification privacy options are enabled.
+
 ## Usage
 
 You can use the command or the API
@@ -75,10 +160,19 @@ Run `:Whereami` to display the country you are in.
 
 You can also provide an argument:
 
-- `:Whereami country`: Show the country location where you request was originated from.
-- `:Whereami city`: Show the city location where you request was originated from.
+- `:Whereami country`: Show the country location where your request originated from.
+- `:Whereami all`: Show a summary with country, city, IP address, and ISP.
+- `:Whereami city`: Show the city location where your request originated from.
 - `:Whereami ip`: Show the IP address where your request originated from.
 - `:Whereami isp`: Show your current internet service provider.
+- `:Whereami json`: Print the raw location data as JSON.
+- `:Whereami refresh`: Clear cached location data, fetch fresh data, then show the country.
+
+### Health checks
+
+Run `:checkhealth whereami` to verify that `plenary.curl` is available, JSON
+decoding works, `vim.notify` customization is detected, and the default location
+provider can be reached.
 
 ### API
 
@@ -87,9 +181,14 @@ You can also use the methods, for example for key bindings
 ```lua
 local whereami = require("whereami")
 whereami.country() -- show the country
+whereami.all() -- show country, city, IP, and ISP
 whereami.city() -- show the city
 whereami.ip() -- show the IP
 whereami.isp() -- show the ISP
+whereami.clear_cache() -- clear cached provider data
+whereami.refresh() -- fetch fresh provider data
+
+local data = whereami.get() -- return raw structured location data without notifying
 
 -- set keymaps
 vim.keymap.set("n", "<leader>l", whereami.country, { desc = "Show the country" })
@@ -98,21 +197,24 @@ vim.keymap.set("n", "<leader>i", whereami.ip, { desc = "Show the ip" })
 vim.keymap.set("n", "<leader>s", whereami.isp, { desc = "Show the ISP" })
 ```
 
-### Privacy mode
 
-Because Whereami displays IP, city, and ISP data in notifications, you can enable privacy options to avoid showing sensitive details on screen:
+## Privacy and providers
 
-```lua
-require("whereami").setup({
-  privacy = {
-    mask_ip = true,
-    hide_city = false,
-    hide_isp = false,
-  },
-})
-```
+Whereami.nvim contacts a third-party IP geolocation provider when it needs fresh
+location data. By default, it tries `ipinfo.io` first and falls back to
+`ipapi.co` if the first provider fails or returns unusable data.
 
-When `mask_ip` is enabled, IPv4 addresses keep the first two octets and mask the rest. For example, `203.0.113.42` is displayed as `203.0.xxx.xxx`. Set `hide_city` or `hide_isp` to `true` to display `hidden` instead of those values.
+- **Data sent:** each HTTP request originates from your current network
+  connection, so the contacted provider receives the source IP address and
+  normal HTTP request metadata. Whereami.nvim does not send your Neovim buffers,
+  files, editor configuration, or any extra location data.
+- **Provider configuration:** you can replace the defaults with `provider_url`
+  or an ordered `providers` list. Review the privacy policy and terms of every
+  provider you configure if you have specific privacy or compliance requirements.
+- **Local caching:** successful responses are cached in memory for five minutes
+  by default. Use `cache_ttl` to change the duration or set it to `0` to disable
+  caching. `clear_cache()` removes cached data, while `refresh()` forces a fresh
+  provider request. Cached data is not persisted between Neovim sessions.
 
 ## Testing
 
