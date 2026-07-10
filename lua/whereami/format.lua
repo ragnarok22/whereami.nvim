@@ -57,7 +57,8 @@ function M.summary(data, config)
 		"City: " .. M.city(data.city, privacy),
 		"IP: " .. M.ip(data.ip, privacy),
 		"ISP: " .. M.isp(data.org, privacy),
-	}, "\n"), icon
+	}, "\n"),
+		icon
 end
 
 return M
