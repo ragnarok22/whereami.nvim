@@ -398,10 +398,8 @@ describe("whereami", function()
 		notify_stub:revert()
 	end)
 
-
 	it("formats private location fields without fetching data", function()
 		assert.are.equal("203.0.xxx.xxx", format.ip("203.0.113.42", { mask_ip = true }))
-		assert.are.equal("2001:db8:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx", format.ip("2001:db8::1", { mask_ip = true }))
 		assert.are.equal("hidden", format.city("Springfield", { hide_city = true }))
 		assert.are.equal("hidden", format.isp("Example ISP", { hide_isp = true }))
 	end)

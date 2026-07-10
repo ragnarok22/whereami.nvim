@@ -12,14 +12,17 @@ function M.clear()
 end
 
 function M.get(config, opts)
+	config = config or {}
 	opts = opts or {}
+	local hooks = config.hooks or {}
+	local cache_ttl = config.cache_ttl or 0
 	local now = vim.loop.now()
-	if not opts.refresh and config.cache_ttl > 0 and cache.data and (now - cache.updated_at) < config.cache_ttl then
+	if not opts.refresh and cache_ttl > 0 and cache.data and (now - cache.updated_at) < cache_ttl then
 		return cache.data
 	end
 
-	if config.hooks.before_request then
-		config.hooks.before_request(config)
+	if hooks.before_request then
+		hooks.before_request(config)
 	end
 
 	local parse_error = false
@@ -29,8 +32,8 @@ function M.get(config, opts)
 			cache.data = data
 			cache.updated_at = vim.loop.now()
 
-			if config.hooks.after_request then
-				config.hooks.after_request(data, config)
+			if hooks.after_request then
+				hooks.after_request(data, config)
 			end
 
 			return data

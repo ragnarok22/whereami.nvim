@@ -2,7 +2,10 @@ local M = {}
 local flag = require("whereami.flag")
 
 function M.country_icon(country, config)
-	return flag.get_flag(country, config.notification.icons.country_fallback)
+	config = config or {}
+	local notification = config.notification or {}
+	local icons = notification.icons or {}
+	return flag.get_flag(country, icons.country_fallback)
 end
 
 function M.ip(ip, privacy)
@@ -45,12 +48,15 @@ function M.isp(isp, privacy)
 end
 
 function M.summary(data, config)
+	data = data or {}
+	config = config or {}
+	local privacy = config.privacy or {}
 	local icon = M.country_icon(data.country, config)
 	return table.concat({
 		"Country: " .. icon .. (data.country or "unknown"),
-		"City: " .. M.city(data.city, config.privacy),
-		"IP: " .. M.ip(data.ip, config.privacy),
-		"ISP: " .. M.isp(data.org, config.privacy),
+		"City: " .. M.city(data.city, privacy),
+		"IP: " .. M.ip(data.ip, privacy),
+		"ISP: " .. M.isp(data.org, privacy),
 	}, "\n"), icon
 end
 
