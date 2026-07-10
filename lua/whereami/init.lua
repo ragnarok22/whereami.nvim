@@ -1,7 +1,7 @@
 local M = {}
 local cache = require("whereami.cache")
 local config = require("whereami.config")
-local format = require("whereami.format")
+local formatter = require("whereami.format")
 
 local available_options = { "all", "city", "country", "ip", "isp", "json", "refresh" }
 
@@ -40,7 +40,7 @@ end
 
 local function notify_country(data)
 	local cfg = current_config()
-	local icon = format.country_icon(data.country, cfg)
+	local icon = formatter.country_icon(data.country, cfg)
 	notify("You are in " .. icon .. (data.country or "unknown"), icon)
 end
 
@@ -79,7 +79,7 @@ function M.city()
 	end
 
 	local cfg = current_config()
-	notify("You are in " .. format.city(data.city, cfg.privacy), cfg.notification.icons.default)
+	notify("You are in " .. formatter.city(data.city, cfg.privacy), cfg.notification.icons.default)
 end
 
 function M.ip()
@@ -90,7 +90,7 @@ function M.ip()
 	end
 
 	local cfg = current_config()
-	notify("Your IP is " .. format.ip(data.ip, cfg.privacy), cfg.notification.icons.default)
+	notify("Your IP is " .. formatter.ip(data.ip, cfg.privacy), cfg.notification.icons.default)
 end
 
 function M.isp()
@@ -101,7 +101,7 @@ function M.isp()
 	end
 
 	local cfg = current_config()
-	notify("Your ISP is " .. format.isp(data.org, cfg.privacy), cfg.notification.icons.default)
+	notify("Your ISP is " .. formatter.isp(data.org, cfg.privacy), cfg.notification.icons.default)
 end
 
 function M.all()
@@ -111,7 +111,7 @@ function M.all()
 		return
 	end
 
-	local summary, icon = format.summary(data, current_config())
+	local summary, icon = formatter.summary(data, current_config())
 	notify(summary, icon)
 end
 
