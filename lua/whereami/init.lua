@@ -1,5 +1,6 @@
 local M = {}
 local providers = require("whereami.providers")
+local flag = require("whereami.flag")
 
 local available_options = { "all", "city", "country", "ip", "isp", "refresh" }
 
@@ -85,55 +86,12 @@ local function get_data(opts)
 	return nil, "Unable to fetch location data."
 end
 
--- TODO: find a better way to do this. So far utf8.char() is the only way I found but is not available in lua 5.1
-local function get_flag(country_iso)
-	local flag_icon = ""
-	if type(country_iso) ~= "string" then
-		return flag_icon
-	end
-
-	country_iso = country_iso:upper()
-	for i = 1, #country_iso do
-		local code_point = country_iso:byte(i) + 127397
-		if code_point <= 0x7F then
-			flag_icon = flag_icon .. string.char(code_point)
-		elseif code_point <= 0x7FF then
-			flag_icon = flag_icon .. string.char(0xC0 + math.floor(code_point / 0x40), 0x80 + code_point % 0x40)
-		elseif code_point <= 0xFFFF then
-			flag_icon = flag_icon
-				.. string.char(
-					0xE0 + math.floor(code_point / 0x1000),
-					0x80 + math.floor((code_point % 0x1000) / 0x40),
-					0x80 + code_point % 0x40
-				)
-		elseif code_point <= 0x10FFFF then
-			flag_icon = flag_icon
-				.. string.char(
-					0xF0 + math.floor(code_point / 0x40000),
-					0x80 + math.floor((code_point % 0x40000) / 0x1000),
-					0x80 + math.floor((code_point % 0x1000) / 0x40),
-					0x80 + code_point % 0x40
-				)
-		end
-	end
-
-	-- for i = 1, #country_iso do
-	--     local charCode = string.byte(country_iso:sub(i, i)) + 127397
-	--     flag_icon = flag_icon .. utf8.char(charCode)
-	-- end
-	return flag_icon
-end
-
 local function notify(message, icon)
 	vim.notify(message, vim.log.levels.INFO, { title = config.notification.title, icon = icon })
 end
 
 local function get_country_icon(country)
-	local icon = get_flag(country or "")
-	if not icon or icon == "" then
-		icon = config.notification.icons.country_fallback
-	end
-	return icon
+	return flag.get_flag(country, config.notification.icons.country_fallback)
 end
 
 local function notify_country(data)

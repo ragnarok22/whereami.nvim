@@ -1,24 +1,7 @@
 local stub = require('luassert.stub')
 local whereami = require('whereami')
+local flag = require('whereami.flag')
 local curl = require('plenary.curl')
-
-local function get_upvalue(fn, name)
-  local index = 1
-  while true do
-    local upvalue_name, value = debug.getupvalue(fn, index)
-    if not upvalue_name then
-      return nil
-    end
-    if upvalue_name == name then
-      return value, index
-    end
-    index = index + 1
-  end
-end
-
-local notify_country = get_upvalue(whereami.country, 'notify_country')
-local get_country_icon = get_upvalue(notify_country, 'get_country_icon')
-local get_flag = get_upvalue(get_country_icon, 'get_flag')
 
 describe('whereami', function()
   after_each(function()
@@ -26,30 +9,63 @@ describe('whereami', function()
   end)
 
   it('returns proper flag emoji', function()
-    assert.is_function(get_flag)
-    assert.are.equal('🇺🇸', get_flag('US'))
+    assert.are.equal('🇺🇸', flag.get_flag('US'))
   end)
 
-  it('uses fallback icon when get_flag returns empty string', function()
+  it('uppercases country codes before generating flags', function()
+    assert.are.equal('🇺🇸', flag.get_flag('us'))
+  end)
+
+  it('uses fallback icon for missing country codes', function()
+    assert.are.equal('🌎', flag.get_flag(nil))
+  end)
+
+  it('uses fallback icon for empty country codes', function()
+    assert.are.equal('🌎', flag.get_flag(''))
+  end)
+
+  it('uses fallback icon for invalid country codes', function()
+    assert.are.equal('🌎', flag.get_flag('USA'))
+    assert.are.equal('🌎', flag.get_flag('U1'))
+  end)
+
+  it('uses fallback icon when provider omits country', function()
     local curl_stub = stub(curl, 'get', function()
-      return { body = '{"country":"US"}' }
+      return { body = '{"city":"Unknown"}' }
     end)
     local notify_stub = stub(vim, 'notify')
-
-    local original, get_flag_index = get_upvalue(get_country_icon, 'get_flag')
-    debug.setupvalue(get_country_icon, get_flag_index, function()
-      return ''
-    end)
 
     whereami.country()
 
     assert.stub(vim.notify).was_called_with(
-      'You are in 🌎US',
+      'You are in 🌎unknown',
       vim.log.levels.INFO,
       { title = 'Where am I?', icon = '🌎' }
     )
 
-    debug.setupvalue(get_country_icon, get_flag_index, original)
+    curl_stub:revert()
+    notify_stub:revert()
+  end)
+
+  it('uses configured fallback icon when provider omits country', function()
+    local curl_stub = stub(curl, 'get', function()
+      return { body = '{"city":"Unknown"}' }
+    end)
+    local notify_stub = stub(vim, 'notify')
+
+    whereami.setup({
+      notification = {
+        icons = { country_fallback = '📍' },
+      },
+    })
+    whereami.country()
+
+    assert.stub(vim.notify).was_called_with(
+      'You are in 📍unknown',
+      vim.log.levels.INFO,
+      { title = 'Where am I?', icon = '📍' }
+    )
+
     curl_stub:revert()
     notify_stub:revert()
   end)
