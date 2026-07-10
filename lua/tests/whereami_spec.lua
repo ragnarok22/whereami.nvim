@@ -182,6 +182,26 @@ describe("whereami", function()
 		notify_stub:revert()
 	end)
 
+	it("normalizes provider_url responses from a built-in provider", function()
+		local curl_stub = stub(curl, "get", function()
+			return { body = "{\"country_code\":\"CA\"}" }
+		end)
+		local notify_stub = stub(vim, "notify")
+
+		whereami.setup({
+			provider_url = "https://ipapi.co/json/",
+		})
+		whereami.country()
+
+		assert.stub(curl.get).was_called_with("https://ipapi.co/json/", { timeout = 5000 })
+		assert
+			.stub(vim.notify)
+			.was_called_with("You are in 🇨🇦CA", vim.log.levels.INFO, { title = "Where am I?", icon = "🇨🇦" })
+
+		curl_stub:revert()
+		notify_stub:revert()
+	end)
+
 	it("prefers provider_url over configured provider lists", function()
 		local curl_stub = stub(curl, "get", function()
 			return { body = "{\"city\":\"Reykjavik\"}" }

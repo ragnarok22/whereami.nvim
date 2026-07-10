@@ -68,6 +68,12 @@ function M.list(config)
 	config = config or {}
 
 	if config.provider_url then
+		for _, provider in ipairs(default_providers) do
+			if provider.url == config.provider_url then
+				return { provider }
+			end
+		end
+
 		return { { url = config.provider_url } }
 	end
 
