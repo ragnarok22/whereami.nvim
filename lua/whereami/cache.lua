@@ -22,19 +22,25 @@ function M.get(config, opts)
 	end
 
 	if hooks.before_request then
-		hooks.before_request(config)
+		local ok = pcall(hooks.before_request, config)
+		if not ok then
+			return nil, "Location hook failed."
+		end
 	end
 
 	local parse_error = false
 	for _, provider in ipairs(providers.list(config)) do
 		local data, err = providers.fetch(provider, config)
 		if data then
+			if hooks.after_request then
+				local ok = pcall(hooks.after_request, data, config)
+				if not ok then
+					return nil, "Location hook failed."
+				end
+			end
+
 			cache.data = data
 			cache.updated_at = vim.loop.now()
-
-			if hooks.after_request then
-				hooks.after_request(data, config)
-			end
 
 			return data
 		end

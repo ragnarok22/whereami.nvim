@@ -464,6 +464,55 @@ describe("whereami", function()
 		notify_stub:revert()
 	end)
 
+	it("notifies instead of raising when the before_request hook fails", function()
+		local curl_stub = stub(curl, "get")
+		local notify_stub = stub(vim, "notify")
+
+		whereami.setup({
+			hooks = {
+				before_request = function()
+					error("before hook failed")
+				end,
+			},
+		})
+
+		assert.has_no.errors(function()
+			whereami.country()
+		end)
+		assert.stub(curl.get).was_not_called()
+		assert
+			.stub(vim.notify)
+			.was_called_with("Location hook failed.", vim.log.levels.ERROR, { title = "Where am I?", icon = "❌" })
+
+		curl_stub:revert()
+		notify_stub:revert()
+	end)
+
+	it("notifies instead of raising when the after_request hook fails", function()
+		local curl_stub = stub(curl, "get", function()
+			return { body = "{\"country\":\"US\"}" }
+		end)
+		local notify_stub = stub(vim, "notify")
+
+		whereami.setup({
+			hooks = {
+				after_request = function()
+					error("after hook failed")
+				end,
+			},
+		})
+
+		assert.has_no.errors(function()
+			whereami.country()
+		end)
+		assert
+			.stub(vim.notify)
+			.was_called_with("Location hook failed.", vim.log.levels.ERROR, { title = "Where am I?", icon = "❌" })
+
+		curl_stub:revert()
+		notify_stub:revert()
+	end)
+
 	it("notifies instead of raising when the response is invalid JSON", function()
 		local curl_stub = stub(curl, "get", function()
 			return { body = "not-json" }
