@@ -1,6 +1,10 @@
 # Whereami.nvim
 
 [![CI](https://github.com/ragnarok22/whereami.nvim/actions/workflows/test.yml/badge.svg)](https://github.com/ragnarok22/whereami.nvim/actions/workflows/test.yml)
+[![Neovim 0.9+](https://img.shields.io/badge/Neovim-0.9%2B-57A143?logo=neovim&logoColor=white)](https://neovim.io/)
+[![License](https://img.shields.io/github/license/ragnarok22/whereami.nvim)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/ragnarok22/whereami.nvim?logo=github)](https://github.com/ragnarok22/whereami.nvim/stargazers)
+[![Last commit](https://img.shields.io/github/last-commit/ragnarok22/whereami.nvim?logo=github)](https://github.com/ragnarok22/whereami.nvim/commits/main)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ragnarok22/whereami.nvim)
 
 Check the approximate location of your current public IP without leaving Neovim. Whereami.nvim is useful for confirming that a VPN is connected to the expected country, city, and network.
@@ -118,7 +122,7 @@ require("whereami").setup({
 | `privacy.hide_city` | `false` | Display `hidden` instead of the city in notifications. |
 | `privacy.hide_isp` | `false` | Display `hidden` instead of the network organization in notifications. |
 | `hooks.before_request` | `nil` | Function called before a fresh provider request cycle. |
-| `hooks.after_request` | `nil` | Function called after a fresh response is successfully normalized. |
+| `hooks.after_request` | `nil` | Function called after fresh location data is successfully accepted. |
 
 ### Notifications
 
@@ -145,7 +149,7 @@ Whereami.nvim uses `vim.notify`, so it works with Neovim's default notifications
 
 By default, Whereami.nvim tries [ipinfo.io](https://ipinfo.io/) and falls back to [ipapi.co](https://ipapi.co/) if the first provider fails or returns no usable location fields.
 
-Use `provider_url` for one endpoint that already returns the normalized fields `ip`, `city`, `country`, and `org`:
+Use `provider_url` for one endpoint that returns at least one supported field: `ip`, `city`, `country`, or `org`.
 
 ```lua
 require("whereami").setup({
@@ -174,13 +178,12 @@ require("whereami").setup({
 })
 ```
 
-Each provider can define:
+Each provider must define either:
 
 - `url`: The JSON endpoint requested with `plenary.curl`.
 - `fetch(config)`: A custom request function used instead of `url`.
-- `normalize(data)`: A function that maps the provider response to `ip`, `city`, `country`, and `org`.
 
-`provider_url` takes precedence over `providers`. A normalized response must contain at least one supported location field.
+Providers can also define `normalize(data)` to map their response to `ip`, `city`, `country`, and `org`. `provider_url` takes precedence over `providers`. Accepted data must contain at least one supported location field; without a normalizer, additional provider-specific fields are preserved.
 
 ### Request Hooks
 
@@ -199,7 +202,7 @@ require("whereami").setup({
 })
 ```
 
-`before_request` runs once before the provider fallback cycle. `after_request` runs only after a provider returns successfully normalized data.
+`before_request` runs once before the provider fallback cycle. `after_request` runs only after a provider returns accepted location data.
 
 ## Usage
 
@@ -227,7 +230,7 @@ To bypass cached data after connecting to a different VPN server:
 | `:Whereami ip` | Show the public IP address. |
 | `:Whereami isp` | Show the network organization or ISP. |
 | `:Whereami all` | Show country, city, IP address, and network organization. |
-| `:Whereami json` | Print normalized, unmasked location data as JSON. |
+| `:Whereami json` | Print unmasked location data as JSON. |
 | `:Whereami refresh` | Clear the cache, fetch fresh data, and show the country. |
 
 ### Lua API
@@ -247,7 +250,7 @@ local data, err = whereami.get()
 local fresh_data, refresh_err = whereami.refresh()
 ```
 
-`get()` returns normalized location data or `nil, error`. `refresh()` clears the cache and returns freshly fetched data without displaying a success notification. Use `:Whereami refresh` when you want both a fresh request and visible output.
+`get()` returns location data or `nil, error`. The default providers return the fields `ip`, `city`, `country`, and `org`; custom providers may preserve additional fields. `refresh()` clears the cache and returns freshly fetched data without displaying a success notification. Use `:Whereami refresh` when you want both a fresh request and visible output.
 
 ### Keymaps
 
@@ -274,7 +277,7 @@ Whereami.nvim contacts a third-party IP geolocation provider when it needs fresh
 - The provider receives your current public IP address and normal HTTP request metadata.
 - Built-in requests do not send Neovim buffers, files, or editor configuration.
 - IP geolocation is approximate and may report the provider's nearest known network location.
-- Privacy options change notification output only. `whereami.get()` and `:Whereami json` return unmasked normalized data.
+- Privacy options change notification output only. `whereami.get()` and `:Whereami json` return unmasked location data.
 - Successful responses are cached in memory for five minutes by default and are never persisted between Neovim sessions.
 - Provider requests are synchronous and use the configured timeout for each attempted provider.
 
@@ -288,7 +291,9 @@ Run the built-in health check when installation or requests are not working:
 :checkhealth whereami
 ```
 
-It verifies that `plenary.curl` is available, JSON decoding works, reports whether `vim.notify` is customized, and checks connectivity to `https://ipinfo.io/json`. The reachability check always uses ipinfo.io, even when a custom provider is configured.
+It verifies that `plenary.curl` is available, checks JSON decoding, reports information about `vim.notify`, and tests connectivity to `https://ipinfo.io/json`. The reachability check always uses ipinfo.io, even when a custom provider is configured.
+
+If your plugin manager loads Whereami.nvim only for the `:Whereami` command, load the plugin first by running `:Whereami` or your manager's explicit load command.
 
 ## Development
 
@@ -311,10 +316,10 @@ stylua --check .
 selene .
 ```
 
-Run the Plenary test suite with:
+Run the Plenary test suite with the test bootstrap as Neovim's startup file:
 
 ```bash
-nvim --headless -c "PlenaryBustedDirectory lua/tests {minimal_init = 'tests/minimal_init.lua'}" +qa
+nvim --headless -u tests/minimal_init.lua -c "PlenaryBustedDirectory lua/tests {minimal_init = 'tests/minimal_init.lua'}" +qa
 ```
 
 Check README links with:
@@ -323,7 +328,7 @@ Check README links with:
 lychee --verbose --no-progress README.md
 ```
 
-GitHub Actions runs these checks for pushes and pull requests.
+GitHub Actions runs these checks for pushes to `main` and for pull requests.
 
 ## Contributing and Security
 
