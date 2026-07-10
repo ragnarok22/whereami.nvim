@@ -178,6 +178,24 @@ vim.keymap.set("n", "<leader>s", whereami.isp, { desc = "Show the ISP" })
 ```
 
 
+## Privacy and providers
+
+Whereami.nvim contacts a third-party IP geolocation provider when it needs fresh
+location data. By default, it tries `ipinfo.io` first and falls back to
+`ipapi.co` if the first provider fails or returns unusable data.
+
+- **Data sent:** each HTTP request originates from your current network
+  connection, so the contacted provider receives the source IP address and
+  normal HTTP request metadata. Whereami.nvim does not send your Neovim buffers,
+  files, editor configuration, or any extra location data.
+- **Provider configuration:** you can replace the defaults with `provider_url`
+  or an ordered `providers` list. Review the privacy policy and terms of every
+  provider you configure if you have specific privacy or compliance requirements.
+- **Local caching:** successful responses are cached in memory for five minutes
+  by default. Use `cache_ttl` to change the duration or set it to `0` to disable
+  caching. `clear_cache()` removes cached data, while `refresh()` forces a fresh
+  provider request. Cached data is not persisted between Neovim sessions.
+
 ## Testing
 
 The plugin uses [plenary.nvim](https://github.com/nvim-lua/plenary.nvim) for
