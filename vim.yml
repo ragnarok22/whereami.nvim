@@ -1,0 +1,7 @@
+---
+base: lua51
+lua_versions:
+  - luajit
+globals:
+  vim:
+    any: true
