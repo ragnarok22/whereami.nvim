@@ -1,6 +1,14 @@
 local M = {}
 local curl = require("plenary.curl")
 
+local config = {
+	privacy = {
+		mask_ip = false,
+		hide_city = false,
+		hide_isp = false,
+	},
+}
+
 local function get_data()
 	local IP_URL = "ipinfo.io"
 	local data = vim.json.decode(curl.get(IP_URL).body)
@@ -41,29 +49,75 @@ local function get_flag(country_iso)
 	return flag_icon
 end
 
+local function mask_ip(ip)
+	if not ip or ip == "" then
+		return ip
+	end
+
+	local masked_ipv4 = ip:gsub("^(%d+)%.(%d+)%.(%d+)%.(%d+)$", "%1.%2.xxx.xxx")
+	if masked_ipv4 ~= ip then
+		return masked_ipv4
+	end
+
+	local first, second = ip:match("^([^:]+):([^:]+):")
+	if first and second then
+		return first .. ":" .. second .. ":xxxx:xxxx:xxxx:xxxx:xxxx:xxxx"
+	end
+
+	return "xxx.xxx.xxx.xxx"
+end
+
+local function format_ip(ip)
+	if config.privacy.mask_ip then
+		return mask_ip(ip)
+	end
+
+	return ip
+end
+
+local function format_city(city)
+	if config.privacy.hide_city then
+		return "hidden"
+	end
+
+	return city
+end
+
+local function format_isp(isp)
+	if config.privacy.hide_isp then
+		return "hidden"
+	end
+
+	return isp
+end
+
+M.setup = function(opts)
+	config = vim.tbl_deep_extend("force", config, opts or {})
+end
+
 M.country = function()
 	local data = get_data()
 	local icon = get_flag(data.country)
-        if not icon or icon == "" then
-                icon = "🌎"
-        end
+	if not icon or icon == "" then
+		icon = "🌎"
+	end
 
 	vim.notify("You are in " .. icon .. data.country, vim.log.levels.INFO, { title = "Where am I?", icon = icon })
 end
 
 M.city = function()
 	local data = get_data()
-	vim.notify("You are in " .. data.city, vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
+	vim.notify("You are in " .. format_city(data.city), vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
 end
 
 M.ip = function()
 	local data = get_data()
-	vim.notify("You IP is " .. data.ip, vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
+	vim.notify("You IP is " .. format_ip(data.ip), vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
 end
 
 M.isp = function()
 	local data = get_data()
-	vim.notify("You ISP is " .. data.org, vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
+	vim.notify("You ISP is " .. format_isp(data.org), vim.log.levels.INFO, { title = "Where am I?", icon = "❔" })
 end
 
 M.whereami = function()

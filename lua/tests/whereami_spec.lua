@@ -36,6 +36,52 @@ describe('whereami', function()
     curl_stub:revert()
     notify_stub:revert()
   end)
+
+
+
+  it('masks IP addresses when privacy mask_ip is enabled', function()
+    local curl_stub = stub(curl, 'get', function()
+      return { body = '{"ip":"203.0.113.42"}' }
+    end)
+    local notify_stub = stub(vim, 'notify')
+
+    whereami.setup({ privacy = { mask_ip = true, hide_city = false, hide_isp = false } })
+    whereami.ip()
+
+    assert.stub(vim.notify).was_called_with(
+      'You IP is 203.0.xxx.xxx',
+      vim.log.levels.INFO,
+      { title = 'Where am I?', icon = '❔' }
+    )
+
+    whereami.setup({ privacy = { mask_ip = false, hide_city = false, hide_isp = false } })
+    curl_stub:revert()
+    notify_stub:revert()
+  end)
+
+  it('hides city and ISP values when privacy options are enabled', function()
+    local curl_stub = stub(curl, 'get', function()
+      return { body = '{"city":"Springfield","org":"Example ISP"}' }
+    end)
+    local notify_stub = stub(vim, 'notify')
+
+    whereami.setup({ privacy = { mask_ip = false, hide_city = true, hide_isp = true } })
+    whereami.city()
+    whereami.isp()
+
+    assert.stub(vim.notify).was_called_with(
+      'You are in hidden',
+      vim.log.levels.INFO,
+      { title = 'Where am I?', icon = '❔' }
+    )
+    assert.stub(vim.notify).was_called_with(
+      'You ISP is hidden',
+      vim.log.levels.INFO,
+      { title = 'Where am I?', icon = '❔' }
+    )
+
+    whereami.setup({ privacy = { mask_ip = false, hide_city = false, hide_isp = false } })
+    curl_stub:revert()
+    notify_stub:revert()
+  end)
 end)
-
-

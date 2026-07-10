@@ -98,6 +98,22 @@ vim.keymap.set("n", "<leader>i", whereami.ip, { desc = "Show the ip" })
 vim.keymap.set("n", "<leader>s", whereami.isp, { desc = "Show the ISP" })
 ```
 
+### Privacy mode
+
+Because Whereami displays IP, city, and ISP data in notifications, you can enable privacy options to avoid showing sensitive details on screen:
+
+```lua
+require("whereami").setup({
+  privacy = {
+    mask_ip = true,
+    hide_city = false,
+    hide_isp = false,
+  },
+})
+```
+
+When `mask_ip` is enabled, IPv4 addresses keep the first two octets and mask the rest. For example, `203.0.113.42` is displayed as `203.0.xxx.xxx`. Set `hide_city` or `hide_isp` to `true` to display `hidden` instead of those values.
+
 ## Testing
 
 The plugin uses [plenary.nvim](https://github.com/nvim-lua/plenary.nvim) for
