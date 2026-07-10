@@ -3,7 +3,7 @@
 [![CI](https://github.com/ragnarok22/whereami.nvim/actions/workflows/test.yml/badge.svg)](https://github.com/ragnarok22/whereami.nvim/actions/workflows/test.yml)
 [![Neovim 0.9+](https://img.shields.io/badge/Neovim-0.9%2B-57A143?logo=neovim&logoColor=white)](https://neovim.io/)
 [![License](https://img.shields.io/github/license/ragnarok22/whereami.nvim)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/ragnarok22/whereami.nvim?logo=github)](https://github.com/ragnarok22/whereami.nvim/stargazers)
+[![GitHub stars](https://img.shields.io/github/stars/ragnarok22/whereami.nvim?logo=github)](https://github.com/ragnarok22/whereami.nvim)
 [![Last commit](https://img.shields.io/github/last-commit/ragnarok22/whereami.nvim?logo=github)](https://github.com/ragnarok22/whereami.nvim/commits/main)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ragnarok22/whereami.nvim)
 
