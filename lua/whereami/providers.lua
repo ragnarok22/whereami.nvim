@@ -68,11 +68,12 @@ local function sanitize_location_data(data)
 	end
 
 	local sanitized = {}
+	for key, value in pairs(data) do
+		sanitized[key] = value
+	end
 	for _, field in ipairs(location_fields) do
 		local value = data[field]
-		if has_location_value(value) then
-			sanitized[field] = value
-		end
+		sanitized[field] = has_location_value(value) and value or nil
 	end
 
 	return has_location_field(sanitized) and sanitized or nil
