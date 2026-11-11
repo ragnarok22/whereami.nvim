@@ -15,7 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
 
       - name: Install Neovim
         run: |
@@ -23,9 +25,14 @@ jobs:
           sudo apt-get install -y neovim
 
       - name: Install plenary.nvim
+        env:
+          PLENARY_COMMIT: b9fd5226c2f76c951fc8ed5923d85e4de065e509
         run: |
-          mkdir -p ~/.local/share/nvim/site/pack/plenary/start
-          git clone --depth 1 https://github.com/nvim-lua/plenary.nvim ~/.local/share/nvim/site/pack/plenary/start/plenary.nvim
+          mkdir -p ~/.local/share/nvim/site/pack/plenary/start/plenary.nvim
+          git -C ~/.local/share/nvim/site/pack/plenary/start/plenary.nvim init
+          git -C ~/.local/share/nvim/site/pack/plenary/start/plenary.nvim remote add origin https://github.com/nvim-lua/plenary.nvim
+          git -C ~/.local/share/nvim/site/pack/plenary/start/plenary.nvim fetch --depth 1 origin "$PLENARY_COMMIT"
+          git -C ~/.local/share/nvim/site/pack/plenary/start/plenary.nvim checkout --detach FETCH_HEAD
 
       - name: Check formatting
         uses: JohnnyMorganz/stylua-action@v5
