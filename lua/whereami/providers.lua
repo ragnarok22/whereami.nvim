@@ -1,5 +1,9 @@
 local M = {}
 
+local MAX_RESPONSE_SIZE = 64 * 1024
+local MAX_LOCATION_VALUE_SIZE = 1024
+local location_fields = { "ip", "city", "country", "org" }
+
 local default_providers = {
 	{
 		name = "ipinfo",
@@ -48,7 +52,7 @@ local function is_single_provider(provider)
 end
 
 local function has_location_value(value)
-	return value ~= nil and value ~= ""
+	return type(value) == "string" and value ~= "" and #value <= MAX_LOCATION_VALUE_SIZE
 end
 
 local function has_location_field(data)
@@ -56,6 +60,22 @@ local function has_location_field(data)
 		or has_location_value(data.city)
 		or has_location_value(data.country)
 		or has_location_value(data.org)
+end
+
+local function sanitize_location_data(data)
+	if type(data) ~= "table" then
+		return nil
+	end
+
+	local sanitized = {}
+	for _, field in ipairs(location_fields) do
+		local value = data[field]
+		if has_location_value(value) then
+			sanitized[field] = value
+		end
+	end
+
+	return has_location_field(sanitized) and sanitized or nil
 end
 
 local function unwrap_response(response)
@@ -120,6 +140,9 @@ function M.fetch(provider, config)
 	if not response or response == "" then
 		return nil
 	end
+	if type(response) == "string" and #response > MAX_RESPONSE_SIZE then
+		return nil
+	end
 
 	local data = response
 	if type(response) == "string" then
@@ -138,11 +161,7 @@ function M.fetch(provider, config)
 		data = normalized
 	end
 
-	if type(data) ~= "table" or not has_location_field(data) then
-		return nil
-	end
-
-	return data
+	return sanitize_location_data(data)
 end
 
 return M
