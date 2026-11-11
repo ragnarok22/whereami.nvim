@@ -2,7 +2,7 @@ local stub = require("luassert.stub")
 local whereami = require("whereami")
 local flag = require("whereami.flag")
 local formatter = require("whereami.format")
-local curl = require("plenary.curl")
+local curl = require("whereami.http")
 
 describe("whereami", function()
 	after_each(function()

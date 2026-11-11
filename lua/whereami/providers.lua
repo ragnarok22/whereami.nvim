@@ -130,7 +130,9 @@ function M.fetch(provider, config)
 	if provider.fetch then
 		ok, response = pcall(provider.fetch, config)
 	else
-		ok, response = pcall(require("plenary.curl").get, provider.url, { timeout = config.timeout })
+		ok, response = pcall(function()
+			return require("whereami.http").get(provider.url, { timeout = config.timeout })
+		end)
 	end
 
 	if not ok or not response or response == "" then
