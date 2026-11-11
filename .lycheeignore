@@ -1,0 +1,3 @@
+# DeepWiki rate-limits automated link checks (HTTP 429).
+^https://deepwiki\.com/badge\.svg$
+^https://deepwiki\.com/ragnarok22/whereami\.nvim/?$

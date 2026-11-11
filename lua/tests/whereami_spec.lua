@@ -202,6 +202,46 @@ describe("whereami", function()
 		notify_stub:revert()
 	end)
 
+	it("rejects object country codes from a built-in provider_url without raising", function()
+		local curl_stub = stub(curl, "get", function()
+			return { body = vim.json.encode({ country_code = { nested = "not a string" } }) }
+		end)
+		local notify_stub = stub(vim, "notify")
+
+		whereami.setup({ provider_url = "https://ipapi.co/json/" })
+
+		assert.has_no.errors(function()
+			whereami.country()
+		end)
+		assert.stub(curl.get).was_called_with("https://ipapi.co/json/", { timeout = 5000 })
+		assert
+			.stub(vim.notify)
+			.was_called_with("Unable to fetch location data.", vim.log.levels.ERROR, { title = "Where am I?", icon = "❌" })
+
+		curl_stub:revert()
+		notify_stub:revert()
+	end)
+
+	it("ignores array country codes alongside valid location data from a built-in provider_url", function()
+		local curl_stub = stub(curl, "get", function()
+			return { body = vim.json.encode({ country_code = { "not a string" }, city = "Toronto" }) }
+		end)
+		local notify_stub = stub(vim, "notify")
+
+		whereami.setup({ provider_url = "https://ipapi.co/json/" })
+
+		assert.has_no.errors(function()
+			whereami.country()
+		end)
+		assert.are.same({ city = "Toronto" }, whereami.get())
+		assert
+			.stub(vim.notify)
+			.was_called_with("You are in 🌎unknown", vim.log.levels.INFO, { title = "Where am I?", icon = "🌎" })
+
+		curl_stub:revert()
+		notify_stub:revert()
+	end)
+
 	it("prefers provider_url over configured provider lists", function()
 		local curl_stub = stub(curl, "get", function()
 			return { body = "{\"city\":\"Reykjavik\"}" }
