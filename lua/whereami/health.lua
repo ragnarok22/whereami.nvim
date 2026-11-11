@@ -1,6 +1,5 @@
 local M = {}
 
-local PROVIDER_URL = "https://ipinfo.io/json"
 local health = vim.health or {}
 
 local function start(name)
@@ -16,14 +15,6 @@ local function ok(message)
 		health.ok(message)
 	else
 		health.report_ok(message)
-	end
-end
-
-local function warn(message)
-	if health.warn then
-		health.warn(message)
-	else
-		health.report_warn(message)
 	end
 end
 
@@ -51,7 +42,7 @@ end
 function M.check()
 	start("whereami.nvim")
 
-	local has_curl, curl = pcall(require, "plenary.curl")
+	local has_curl = pcall(require, "plenary.curl")
 	if has_curl then
 		ok("plenary.curl is available")
 	else
@@ -73,26 +64,6 @@ function M.check()
 		ok("vim.notify has been customized")
 	else
 		info("vim.notify is using Neovim's default implementation")
-	end
-
-	if not has_curl then
-		warn("Skipping provider reachability check because plenary.curl is unavailable")
-		return
-	end
-
-	local request_ok, response = pcall(curl.get, PROVIDER_URL, { timeout = 5000 })
-	if not request_ok then
-		error("Could not reach provider " .. PROVIDER_URL .. ": " .. tostring(response))
-		return
-	end
-
-	local status = response and response.status
-	if status and status >= 200 and status < 300 then
-		ok("Provider is reachable: " .. PROVIDER_URL)
-	elseif status then
-		error("Provider " .. PROVIDER_URL .. " returned HTTP status " .. tostring(status))
-	else
-		error("Provider " .. PROVIDER_URL .. " did not return an HTTP status")
 	end
 end
 

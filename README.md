@@ -291,7 +291,7 @@ Run the built-in health check when installation or requests are not working:
 :checkhealth whereami
 ```
 
-It verifies that `plenary.curl` is available, checks JSON decoding, reports information about `vim.notify`, and tests connectivity to `https://ipinfo.io/json`. The reachability check always uses ipinfo.io, even when a custom provider is configured.
+It verifies that `plenary.curl` is available, checks JSON decoding, and reports information about `vim.notify`. The health check does not make network requests; use an explicit `:Whereami` command when you want to test provider connectivity.
 
 If your plugin manager loads Whereami.nvim only for the `:Whereami` command, load the plugin first by running `:Whereami` or your manager's explicit load command.
 
