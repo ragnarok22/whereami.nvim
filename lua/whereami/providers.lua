@@ -120,22 +120,8 @@ function M.list(config)
 	return default_providers
 end
 
-function M.fetch(provider, config)
-	provider = normalize_provider(provider)
-	if not provider then
-		return nil
-	end
-
-	local ok, response
-	if provider.fetch then
-		ok, response = pcall(provider.fetch, config)
-	else
-		ok, response = pcall(function()
-			return require("whereami.http").get(provider.url, { timeout = config.timeout })
-		end)
-	end
-
-	if not ok or not response or response == "" then
+local function parse_response(provider, response)
+	if not response or response == "" then
 		return nil
 	end
 
@@ -165,6 +151,51 @@ function M.fetch(provider, config)
 	end
 
 	return sanitize_location_data(data)
+end
+
+function M.fetch(provider, config)
+	provider = normalize_provider(provider)
+	if not provider then
+		return nil
+	end
+
+	local ok, response = pcall(function()
+		if provider.fetch then
+			return provider.fetch(config)
+		end
+		return require("whereami.http").get(provider.url, { timeout = config.timeout })
+	end)
+	if ok then
+		return parse_response(provider, response)
+	end
+end
+
+function M.fetch_async(provider, config, callback)
+	provider = normalize_provider(provider)
+	local complete = vim.schedule_wrap(function(response)
+		if provider then
+			callback(parse_response(provider, response))
+		else
+			callback(nil)
+		end
+	end)
+	if not provider then
+		complete(nil)
+		return
+	end
+	if provider.fetch then
+		local ok, response = pcall(provider.fetch, config)
+		complete(ok and response or nil)
+		return
+	end
+	local ok, cancel = pcall(function()
+		return require("whereami.http").get(provider.url, { timeout = config.timeout }, complete)
+	end)
+	if not ok then
+		complete(nil)
+		return
+	end
+	return cancel
 end
 
 return M

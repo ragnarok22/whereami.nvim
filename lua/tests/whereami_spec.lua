@@ -641,13 +641,19 @@ describe("whereami", function()
 
 	it("does not run a second refresh cycle when refresh command fails", function()
 		local calls = 0
+		local notified = false
 		local curl_stub = stub(curl, "get", function()
 			calls = calls + 1
 			error("network unavailable")
 		end)
-		local notify_stub = stub(vim, "notify")
+		local notify_stub = stub(vim, "notify", function()
+			notified = true
+		end)
 
 		vim.cmd("Whereami refresh")
+		assert.is_true(vim.wait(1000, function()
+			return notified
+		end))
 
 		assert.are.equal(2, calls)
 		assert
@@ -791,13 +797,19 @@ describe("whereami", function()
 	end)
 
 	it("prints raw data as JSON without notifying", function()
-		local curl_stub = stub(curl, "get", function()
-			return { body = "{\"ip\":\"127.0.0.1\"}" }
+		local curl_stub = stub(curl, "get", function(_, _, callback)
+			callback({ body = "{\"ip\":\"127.0.0.1\"}" })
 		end)
 		local notify_stub = stub(vim, "notify")
-		local print_stub = stub(_G, "print")
+		local printed = false
+		local print_stub = stub(_G, "print", function()
+			printed = true
+		end)
 
 		vim.cmd("Whereami json")
+		assert.is_true(vim.wait(1000, function()
+			return printed
+		end))
 
 		assert.stub(_G.print).was_called_with("{\"ip\":\"127.0.0.1\"}")
 		assert.stub(vim.notify).was_not_called()

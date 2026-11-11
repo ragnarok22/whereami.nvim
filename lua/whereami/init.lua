@@ -53,71 +53,71 @@ function M.clear_cache()
 	cache.clear()
 end
 
-function M.refresh()
+function M.refresh(callback)
+	if callback then
+		return cache.get_async(current_config(), callback, { refresh = true })
+	end
 	return cache.refresh(current_config())
 end
 
-function M.get()
+function M.get(callback)
+	if callback then
+		return cache.get_async(current_config(), callback)
+	end
 	return get_data()
 end
 
-function M.country()
-	local data, err = get_data()
-	if not data then
-		notify_error(err)
-		return
-	end
-
-	notify_country(data)
-end
-
-function M.city()
-	local data, err = get_data()
-	if not data then
-		notify_error(err)
-		return
-	end
-
+local function show(option, opts)
 	local cfg = current_config()
-	notify("You are in " .. formatter.city(data.city, cfg.privacy), cfg.notification.icons.default)
-end
-
-function M.ip()
-	local data, err = get_data()
-	if not data then
-		notify_error(err)
-		return
+	local function display(data, err)
+		if cfg ~= current_config() or err == cache.CANCELLED then
+			return
+		end
+		if not data then
+			notify_error(err)
+		elseif option == "country" then
+			notify_country(data)
+		elseif option == "all" then
+			local summary, icon = formatter.summary(data, cfg)
+			notify(summary, icon)
+		elseif option == "city" then
+			notify("You are in " .. formatter.city(data.city, cfg.privacy), cfg.notification.icons.default)
+		elseif option == "ip" then
+			notify("Your IP is " .. formatter.ip(data.ip, cfg.privacy), cfg.notification.icons.default)
+		elseif option == "isp" then
+			notify("Your ISP is " .. formatter.isp(data.org, cfg.privacy), cfg.notification.icons.default)
+		end
 	end
-
-	local cfg = current_config()
-	notify("Your IP is " .. formatter.ip(data.ip, cfg.privacy), cfg.notification.icons.default)
-end
-
-function M.isp()
-	local data, err = get_data()
-	if not data then
-		notify_error(err)
-		return
+	if opts and opts.async then
+		cache.get_async(cfg, display)
+	else
+		display(get_data())
 	end
-
-	local cfg = current_config()
-	notify("Your ISP is " .. formatter.isp(data.org, cfg.privacy), cfg.notification.icons.default)
 end
 
-function M.all()
-	local data, err = get_data()
-	if not data then
-		notify_error(err)
-		return
-	end
-
-	local summary, icon = formatter.summary(data, current_config())
-	notify(summary, icon)
+function M.country(opts)
+	show("country", opts)
 end
 
-function M.whereami()
+function M.city(opts)
+	show("city", opts)
+end
+
+function M.ip(opts)
+	show("ip", opts)
+end
+
+function M.isp(opts)
+	show("isp", opts)
+end
+
+function M.all(opts)
+	show("all", opts)
+end
+
+function M.whereami(opts)
 	local handler = M[current_config().default_command] or M.country
-	handler()
+	handler(opts)
 end
 
 vim.api.nvim_create_user_command("Whereami", function(opts)
@@ -129,32 +129,34 @@ vim.api.nvim_create_user_command("Whereami", function(opts)
 	end
 
 	if option == nil then
-		M.whereami()
+		M.whereami({ async = true })
 		return
 	end
 
 	if option == "json" then
-		local data, err = M.get()
-		if not data then
-			notify_error(err)
-			return
-		end
-		print(vim.json.encode(data))
+		M.get(function(data, err)
+			if data then
+				print(vim.json.encode(data))
+			elseif err ~= cache.CANCELLED then
+				notify_error(err)
+			end
+		end)
 		return
 	end
 
 	if option == "refresh" then
-		local data, err = M.refresh()
-		if not data then
-			notify_error(err)
-			return
-		end
-		notify_country(data)
+		M.refresh(function(data, err)
+			if data then
+				notify_country(data)
+			elseif err ~= cache.CANCELLED then
+				notify_error(err)
+			end
+		end)
 		return
 	end
 
 	if is_available_option(option) then
-		M[option]()
+		M[option]({ async = true })
 	else
 		notify_unknown_option(option)
 	end

@@ -5,7 +5,7 @@ function M.start(response)
 	local listener = uv.new_tcp()
 	assert(listener:bind("127.0.0.1", 0))
 	local clients = {}
-	local server = { closed = 0 }
+	local server = { closed = 0, connections = 0 }
 
 	local function close(client)
 		if not client:is_closing() then
@@ -20,6 +20,7 @@ function M.start(response)
 		assert(not err, err)
 		local client = uv.new_tcp()
 		assert(listener:accept(client))
+		server.connections = server.connections + 1
 		clients[client] = true
 		local received = false
 		client:read_start(function(read_err, data)
