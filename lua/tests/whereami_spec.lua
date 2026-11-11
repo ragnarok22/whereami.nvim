@@ -578,6 +578,27 @@ describe("whereami", function()
 		notify_stub:revert()
 	end)
 
+	it("ignores non-string and oversized provider fields", function()
+		local curl_stub = stub(curl, "get", function(url)
+			if url == "https://ipinfo.io/json" then
+				return { body = vim.json.encode({ country = 42, city = {}, ip = true, org = string.rep("x", 1025) }) }
+			end
+
+			return { body = '{"country_code":"CA","city":"Toronto"}' }
+		end)
+		local notify_stub = stub(vim, "notify")
+
+		assert.has_no.errors(function()
+			whereami.country()
+		end)
+		assert
+			.stub(vim.notify)
+			.was_called_with("You are in 🇨🇦CA", vim.log.levels.INFO, { title = "Where am I?", icon = "🇨🇦" })
+
+		curl_stub:revert()
+		notify_stub:revert()
+	end)
+
 	it("does not run a second refresh cycle when refresh command fails", function()
 		local calls = 0
 		local curl_stub = stub(curl, "get", function()
