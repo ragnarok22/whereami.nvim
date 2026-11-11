@@ -27,7 +27,9 @@ function M.start(response)
 				close(client)
 			elseif not received then
 				received = true
-				if response ~= false then
+				if type(response) == "function" then
+					response(client)
+				elseif response ~= false then
 					client:write(response, function()
 						if not client:is_closing() then
 							client:shutdown(function()

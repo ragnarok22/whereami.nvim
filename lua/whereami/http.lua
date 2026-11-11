@@ -1,8 +1,10 @@
 local M = {}
 local uv = vim.uv or vim.loop
+local MAX_RESPONSE_SIZE = 64 * 1024
 
 local function start_request(url, timeout, callback)
 	local chunks = {}
+	local received = 0
 	local finished, failed = false, false
 	local job, timer
 
@@ -32,7 +34,7 @@ local function start_request(url, timeout, callback)
 		local response
 		if code == 0 and not failed then
 			local body, status = table.concat(chunks):match("^(.*)\n(%d%d%d)$")
-			if status then
+			if status and #body <= MAX_RESPONSE_SIZE then
 				response = { body = body, status = tonumber(status) }
 			end
 		end
@@ -47,6 +49,8 @@ local function start_request(url, timeout, callback)
 		"--location",
 		"--max-time",
 		string.format("%.3f", timeout / 1000),
+		"--max-filesize",
+		tostring(MAX_RESPONSE_SIZE),
 		"--write-out",
 		"\n%{http_code}",
 		"--url",
@@ -54,7 +58,15 @@ local function start_request(url, timeout, callback)
 	}, {
 		on_stdout = function(_, data)
 			if not finished and not failed then
-				table.insert(chunks, table.concat(data, "\n"))
+				local chunk = table.concat(data, "\n")
+				received = received + #chunk
+				-- Reserve four bytes for the newline and curl's three-digit status.
+				if received > MAX_RESPONSE_SIZE + 4 then
+					chunks = {}
+					cancel()
+				else
+					table.insert(chunks, chunk)
+				end
 			end
 		end,
 		-- curl errors include the full URL; expose only the plugin's generic errors.

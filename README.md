@@ -277,6 +277,7 @@ Whereami.nvim contacts a third-party IP geolocation provider when it needs fresh
 - Privacy options change notification output only. `whereami.get()` and `:Whereami json` return unmasked location data.
 - Successful responses are cached in memory for five minutes by default and are never persisted between Neovim sessions.
 - Provider requests are synchronous and use the configured timeout for each attempted provider. Timed-out curl processes are stopped, and local curl configuration files are not loaded.
+- HTTP response bodies are limited to 64 KiB. Oversized transfers are stopped while receiving data, including responses without a `Content-Length` header.
 
 Review the privacy policy and terms of every provider you configure. Use `cache_ttl = 0` to disable caching, `clear_cache()` to remove cached data, or `:Whereami refresh` to force a new request.
 
