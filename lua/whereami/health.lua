@@ -26,19 +26,6 @@ local function error(message)
 	end
 end
 
-local function info(message)
-	if health.info then
-		health.info(message)
-	else
-		health.report_info(message)
-	end
-end
-
-local function is_notify_customized()
-	local notify_info = debug.getinfo(vim.notify, "S")
-	return notify_info and notify_info.source ~= "=[C]"
-end
-
 function M.check()
 	start("whereami.nvim")
 
@@ -60,10 +47,14 @@ function M.check()
 		error("vim.json.decode is not available. whereami.nvim requires Neovim with vim.json support.")
 	end
 
-	if is_notify_customized() then
-		ok("vim.notify has been customized")
+	local notify_type = type(vim.notify)
+	local notify_metatable = notify_type == "table" and getmetatable(vim.notify)
+	if notify_type == "function" then
+		ok("vim.notify is available as a function")
+	elseif type(notify_metatable) == "table" and type(notify_metatable.__call) == "function" then
+		ok("vim.notify is available as a callable table")
 	else
-		info("vim.notify is using Neovim's default implementation")
+		error("vim.notify is not callable")
 	end
 end
 
