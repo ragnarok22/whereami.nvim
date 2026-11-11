@@ -94,6 +94,8 @@ use({
 
 Call `setup()` to override any defaults. Each call resets unspecified options to their defaults and clears cached location data.
 
+Invalid options raise an error during setup without replacing the previous configuration. `timeout` must be a positive integer and `cache_ttl` a nonnegative integer, both in milliseconds (maximum `2147483647`).
+
 ```lua
 require("whereami").setup({
   default_command = "all",
