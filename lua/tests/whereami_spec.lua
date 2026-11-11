@@ -584,7 +584,7 @@ describe("whereami", function()
 				return { body = vim.json.encode({ country = 42, city = {}, ip = true, org = string.rep("x", 1025) }) }
 			end
 
-			return { body = '{"country_code":"CA","city":"Toronto"}' }
+			return { body = "{\"country_code\":\"CA\",\"city\":\"Toronto\"}" }
 		end)
 		local notify_stub = stub(vim, "notify")
 
