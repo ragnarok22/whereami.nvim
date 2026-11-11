@@ -29,11 +29,10 @@ end
 function M.check()
 	start("whereami.nvim")
 
-	local has_curl = pcall(require, "plenary.curl")
-	if has_curl then
-		ok("plenary.curl is available")
+	if vim.fn.executable(vim.g.plenary_curl_bin_path or "curl") == 1 then
+		ok("curl is available")
 	else
-		error("plenary.curl is not available. Install nvim-lua/plenary.nvim.")
+		error("curl is not available. Install curl and ensure it is on PATH.")
 	end
 
 	if vim.json and vim.json.decode then

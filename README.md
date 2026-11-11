@@ -37,7 +37,7 @@ Check the approximate location of your current public IP without leaving Neovim.
 ### Requirements
 
 - Neovim 0.9 or newer
-- [plenary.nvim](https://github.com/nvim-lua/plenary.nvim)
+- `curl` available on `PATH`
 - Network access to the configured location providers
 - An emoji-capable terminal and font for country flags (optional)
 
@@ -47,7 +47,6 @@ Check the approximate location of your current public IP without leaving Neovim.
 {
   "ragnarok22/whereami.nvim",
   cmd = "Whereami",
-  dependencies = { "nvim-lua/plenary.nvim" },
 }
 ```
 
@@ -57,7 +56,6 @@ Whereami.nvim works with its defaults, so calling `setup()` is optional. To conf
 {
   "ragnarok22/whereami.nvim",
   cmd = "Whereami",
-  dependencies = { "nvim-lua/plenary.nvim" },
   opts = {
     default_command = "all",
   },
@@ -72,7 +70,6 @@ local cmd = require("pckr.loader.cmd")
 require("pckr").add({
   {
     "ragnarok22/whereami.nvim",
-    requires = { "nvim-lua/plenary.nvim" },
     cond = cmd("Whereami"),
   },
 })
@@ -86,7 +83,6 @@ require("pckr").add({
 use({
   "ragnarok22/whereami.nvim",
   cmd = "Whereami",
-  requires = { "nvim-lua/plenary.nvim" },
 })
 ```
 
@@ -135,7 +131,6 @@ Whereami.nvim uses `vim.notify`, so it works with Neovim's default notifications
   "ragnarok22/whereami.nvim",
   cmd = "Whereami",
   dependencies = {
-    "nvim-lua/plenary.nvim",
     {
       "rcarriga/nvim-notify",
       config = function()
@@ -182,7 +177,7 @@ require("whereami").setup({
 
 Each provider must define either:
 
-- `url`: The JSON endpoint requested with `plenary.curl`.
+- `url`: The JSON endpoint requested with `curl` through Neovim's job API.
 - `fetch(config)`: A custom request function used instead of `url`.
 
 Providers can also define `normalize(data)` to map their response to `ip`, `city`, `country`, and `org`. `provider_url` takes precedence over `providers`. Accepted data must contain at least one supported location field; without a normalizer, additional provider-specific fields are preserved.
@@ -281,7 +276,7 @@ Whereami.nvim contacts a third-party IP geolocation provider when it needs fresh
 - IP geolocation is approximate and may report the provider's nearest known network location.
 - Privacy options change notification output only. `whereami.get()` and `:Whereami json` return unmasked location data.
 - Successful responses are cached in memory for five minutes by default and are never persisted between Neovim sessions.
-- Provider requests are synchronous and use the configured timeout for each attempted provider.
+- Provider requests are synchronous and use the configured timeout for each attempted provider. Timed-out curl processes are stopped, and local curl configuration files are not loaded.
 
 Review the privacy policy and terms of every provider you configure. Use `cache_ttl = 0` to disable caching, `clear_cache()` to remove cached data, or `:Whereami refresh` to force a new request.
 
@@ -293,7 +288,7 @@ Run the built-in health check when installation or requests are not working:
 :checkhealth whereami
 ```
 
-It verifies that `plenary.curl` is available, checks JSON decoding, and reports information about `vim.notify`. The health check does not make network requests; use an explicit `:Whereami` command when you want to test provider connectivity.
+It verifies that `curl` is available, checks JSON decoding, and reports information about `vim.notify`. The health check does not make network requests; use an explicit `:Whereami` command when you want to test provider connectivity.
 
 If your plugin manager loads Whereami.nvim only for the `:Whereami` command, load the plugin first by running `:Whereami` or your manager's explicit load command.
 

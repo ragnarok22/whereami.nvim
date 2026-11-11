@@ -1,31 +1,36 @@
-local stub = require("luassert.stub")
 local http = require("whereami.http")
-local curl = require("plenary.curl")
+local server_helper = require("tests.helpers.http_server")
 
-describe("HTTP error handling", function()
-	local curl_stub
+describe("HTTP transport", function()
+	local server
 
 	after_each(function()
-		if curl_stub then
-			curl_stub:revert()
+		if server then
+			server.close()
 		end
 	end)
 
-	it("handles Plenary callback errors without forwarding private provider URLs", function()
-		local error_handled = false
-		curl_stub = stub(curl, "get", function(url, opts)
-			assert.are.equal(1234, opts.timeout)
-			vim.schedule(function()
-				opts.on_error({ message = "curl failed: " .. url })
-				error_handled = true
-			end)
-			return {}
-		end)
+	it("handles real curl errors without forwarding private provider URLs", function()
+		server = server_helper.start("")
 
-		http.get("https://example.test/json?token=private", { timeout = 1234 })
+		assert.is_nil(http.get(server.url .. "?token=EXAMPLE_TOKEN", { timeout = 1000 }))
+		assert.is_nil(vim.fn.execute("messages"):find("EXAMPLE_TOKEN", 1, true))
+	end)
+
+	it("terminates a timed-out curl process instead of leaving its connection open", function()
+		server = server_helper.start(false)
+
+		assert.is_nil(http.get(server.url, { timeout = 100 }))
 
 		assert.is_true(vim.wait(1000, function()
-			return error_handled
+			return server.closed == 1
 		end))
+	end)
+
+	it("preserves multiline bodies and HTTP status codes", function()
+		local body = "{\n\"country\":\"US\"\n}\n"
+		server = server_helper.start("HTTP/1.1 200 OK\r\nContent-Length: " .. #body .. "\r\n\r\n" .. body)
+
+		assert.are.same({ body = body, status = 200 }, http.get(server.url, { timeout = 1000 }))
 	end)
 end)
